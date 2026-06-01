@@ -14,6 +14,11 @@ Projektstruktur (wichtigste Dateien):
 - `TetrisTCPserver_v0.6.jar` — Java-Tetris-Server (muss ausführbar sein)
 - `docs/Tetris_Reinforcement_learning.md` — Detaillierte Projekt-Dokumentation (Testen, Spielablauf, Reward-Funktion, Artefakte)
 
+- `tests/` — Beispieltests und Testanleitungen
+   - `tests/test_reward.py` — Unit-Tests für die Reward-Logik
+   - `tests/test_env_api.py` — Integrationstest mit TCP-Stub (überspringt sich, wenn `TetrisEnv` nicht importierbar ist)
+   - `tests/TESTS.md` — Anleitung zum Ausführen der Tests
+
 Kurzanleitung zum Starten
 
 1. Umgebung aktivieren (PDM/venv):
