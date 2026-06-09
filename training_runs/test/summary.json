@@ -1,0 +1,17 @@
+{
+  "name": "test",
+  "status": "completed",
+  "resume_from": null,
+  "started_at": 1780999359.1164339,
+  "finished_at": 1780999514.0689917,
+  "duration_sec": 154.95,
+  "requested_timesteps": 10000,
+  "base_timesteps": 0,
+  "final_timesteps": 10000,
+  "n_envs": 4,
+  "algorithm": "A2C",
+  "model_path": "/home/oskar/dev/machine_learning/models/test.zip",
+  "first_gif": "/home/oskar/dev/machine_learning/gifs/test_first.gif",
+  "last_gif": "/home/oskar/dev/machine_learning/gifs/test_last.gif",
+  "summary_text": "Run 'test' trainiert 10,000 zusätzliche Timesteps in 154.95s mit 4 Envs und A2C"
+}

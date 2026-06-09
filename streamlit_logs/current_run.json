@@ -1,1 +1,1 @@
-{"pid": 123951, "log": "/home/oskar/dev/machine_learning/streamlit_logs/Run_1.log", "name": "Run_1", "requested_timesteps": 100000, "resume_from": "Run_1"}
+{"pid": 166073, "log": "/home/oskar/dev/machine_learning/streamlit_logs/Run_1.log", "name": "Run_1", "requested_timesteps": 100000, "resume_from": "Run_1", "base_timesteps": 800000, "final_timesteps": 900000, "algorithm": "A2C"}

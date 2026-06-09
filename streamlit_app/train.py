@@ -6,7 +6,7 @@ import time
 
 import imageio
 import numpy as np
-from stable_baselines3 import A2C
+from stable_baselines3 import A2C, PPO
 from stable_baselines3.common.env_util import make_vec_env
 
 # Ensure project root is on sys.path so imports like `tetris_env` work
@@ -20,6 +20,10 @@ from tetris_env import TetrisEnv
 RUNS_DIR = os.path.join(PROJECT_ROOT, 'training_runs')
 MODELS_DIR = os.path.join(PROJECT_ROOT, 'models')
 GIFS_DIR = os.path.join(PROJECT_ROOT, 'gifs')
+ALGORITHMS = {
+    'A2C': A2C,
+    'PPO': PPO,
+}
 
 
 def ensure_dirs():
@@ -65,8 +69,12 @@ def load_base_timesteps(resume_from: str | None):
         return 0
 
 
-def train(name: str, timesteps: int, n_envs: int, logdir: str, resume_from: str | None = None):
+def train(name: str, timesteps: int, n_envs: int, logdir: str, resume_from: str | None = None, algorithm: str = 'A2C'):
     ensure_dirs()
+    algorithm = algorithm.upper()
+    if algorithm not in ALGORITHMS:
+        raise ValueError(f'Unsupported algorithm: {algorithm}')
+    algorithm_class = ALGORITHMS[algorithm]
 
     started_at = time.time()
     run_dir = os.path.join(RUNS_DIR, name)
@@ -85,10 +93,10 @@ def train(name: str, timesteps: int, n_envs: int, logdir: str, resume_from: str 
 
     if resume_model_path:
         print(f"↻ Lade Modell zum Weitertrainieren: {resume_model_path}")
-        model = A2C.load(resume_model_path, env=vec_env)
+        model = algorithm_class.load(resume_model_path, env=vec_env)
     else:
-        print('Erstelle A2C Modell mit CNN Policy...')
-        model = A2C('CnnPolicy', vec_env, verbose=1, tensorboard_log=logdir)
+        print(f'Erstelle {algorithm} Modell mit CNN Policy...')
+        model = algorithm_class('CnnPolicy', vec_env, verbose=1, tensorboard_log=logdir)
 
     first_gif_path = os.path.join(GIFS_DIR, f'{name}_first.gif')
     last_gif_path = os.path.join(GIFS_DIR, f'{name}_last.gif')
@@ -120,12 +128,13 @@ def train(name: str, timesteps: int, n_envs: int, logdir: str, resume_from: str 
         'base_timesteps': int(base_timesteps),
         'final_timesteps': int(final_timesteps),
         'n_envs': int(n_envs),
+        'algorithm': algorithm,
         'model_path': final_model_path,
         'first_gif': first_gif_path,
         'last_gif': last_gif_path,
         'summary_text': (
             f"Run '{name}' trainiert {int(timesteps):,} zusätzliche Timesteps "
-            f"in {round(finished_at - started_at, 2):.2f}s mit {n_envs} Envs"
+            f"in {round(finished_at - started_at, 2):.2f}s mit {n_envs} Envs und {algorithm}"
             + (f", weitergeführt von '{resume_from}'" if resume_from else '')
         ),
     }
@@ -145,6 +154,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_envs', type=int, default=4)
     parser.add_argument('--logdir', type=str, default='./tb_logs')
     parser.add_argument('--resume-from', type=str, default=None)
+    parser.add_argument('--algorithm', type=str, default='A2C', choices=sorted(ALGORITHMS))
     args = parser.parse_args()
 
-    train(args.name, args.timesteps, args.n_envs, args.logdir, resume_from=args.resume_from)
+    train(args.name, args.timesteps, args.n_envs, args.logdir, resume_from=args.resume_from, algorithm=args.algorithm)

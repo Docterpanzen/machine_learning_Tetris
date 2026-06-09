@@ -2,6 +2,7 @@ import glob
 import json
 import os
 import re
+import shutil
 import socket
 import subprocess
 import sys
@@ -22,6 +23,7 @@ RUN_STATE = os.path.join(LOGS_DIR, 'current_run.json')
 API_BASE = 'http://127.0.0.1:8000'
 TETRIS_SERVER_HOST = '127.0.0.1'
 TETRIS_SERVER_PORT = 10612
+ALGORITHMS = ['A2C', 'PPO']
 
 os.makedirs(LOGS_DIR, exist_ok=True)
 os.makedirs(GIFS_DIR, exist_ok=True)
@@ -238,6 +240,26 @@ def resolve_base_timesteps(run_detail: dict[str, Any]):
     )
 
 
+def resolve_algorithm(run_detail: dict[str, Any] | None):
+    if not run_detail:
+        return 'A2C'
+    summary = run_detail.get('summary') or {}
+    return (run_detail.get('algorithm') or summary.get('algorithm') or 'A2C').upper()
+
+
+def get_algorithm_class(algorithm: str):
+    from stable_baselines3 import A2C, PPO
+
+    classes = {
+        'A2C': A2C,
+        'PPO': PPO,
+    }
+    normalized = (algorithm or 'A2C').upper()
+    if normalized not in classes:
+        raise ValueError(f'Nicht unterstützter Algorithmus: {algorithm}')
+    return classes[normalized]
+
+
 def all_known_run_names():
     names = set()
     for run in fetch_runs():
@@ -276,6 +298,8 @@ def list_models():
                 'label': f"{detail.get('name') or run.get('name')} · Historie",
                 'name': detail.get('name') or run.get('name') or os.path.basename(model_path),
                 'path': model_path,
+                'algorithm': resolve_algorithm(detail),
+                'run': detail,
             })
             seen_paths.add(model_path)
 
@@ -287,10 +311,58 @@ def list_models():
             'label': f'{name} · Modell-Datei',
             'name': name,
             'path': model_path,
+            'algorithm': 'A2C',
+            'run': fetch_run_detail(name) or {},
         })
         seen_paths.add(model_path)
 
     return models
+
+
+def model_management_items():
+    items = []
+    for model in list_models():
+        model_path = model['path']
+        name = model['name']
+        run_dir = os.path.join(ROOT, 'training_runs', name)
+        summary_path = os.path.join(run_dir, 'summary.json')
+        summary = load_json_file(summary_path) or {}
+        related_gifs = sorted(glob.glob(os.path.join(GIFS_DIR, f'{name}_*.gif')))
+        related_logs = sorted(glob.glob(os.path.join(LOGS_DIR, f'{name}.log')))
+        items.append({
+            **model,
+            'size_bytes': os.path.getsize(model_path) if os.path.exists(model_path) else 0,
+            'modified_at': os.path.getmtime(model_path) if os.path.exists(model_path) else None,
+            'summary': summary,
+            'run_dir': run_dir,
+            'summary_path': summary_path,
+            'related_gifs': related_gifs,
+            'related_logs': related_logs,
+        })
+    items.sort(key=lambda item: item.get('modified_at') or 0, reverse=True)
+    return items
+
+
+def delete_model_artifacts(item: dict[str, Any], delete_run: bool, delete_gifs: bool, delete_logs: bool):
+    deleted = []
+    model_path = item.get('path')
+    if model_path and os.path.exists(model_path):
+        os.remove(model_path)
+        deleted.append(model_path)
+    if delete_run and item.get('run_dir') and os.path.exists(item['run_dir']):
+        shutil.rmtree(item['run_dir'])
+        deleted.append(item['run_dir'])
+    if delete_gifs:
+        for gif_path in item.get('related_gifs') or []:
+            if os.path.exists(gif_path):
+                os.remove(gif_path)
+                deleted.append(gif_path)
+    if delete_logs:
+        for log_path in item.get('related_logs') or []:
+            if os.path.exists(log_path):
+                os.remove(log_path)
+                deleted.append(log_path)
+    return deleted
 
 
 def list_playback_gifs():
@@ -338,7 +410,7 @@ def render_game_stats(stats: dict[str, Any] | None):
     detail_cols[0].metric('Ø Reward/Schritt', f"{float(stats.get('avg_reward', 0.0)):.2f}")
     detail_cols[1].metric('Dauer', format_duration(stats.get('duration_sec')))
     detail_cols[2].metric('Game Over', 'Ja' if stats.get('terminated') else 'Nein')
-    st.caption(f"Modell: {stats.get('model_name', 'n/a')}")
+    st.caption(f"Modell: {stats.get('model_name', 'n/a')} · Algorithmus: {stats.get('algorithm', 'A2C')}")
 
     action_counts = stats.get('action_counts') or {}
     if action_counts:
@@ -361,6 +433,7 @@ def render_game_stats(stats: dict[str, Any] | None):
 def run_model_game(
     model_path: str,
     model_name: str,
+    algorithm: str,
     max_steps: int,
     frame_delay: float,
     live_placeholder,
@@ -368,7 +441,6 @@ def run_model_game(
 ):
     import imageio
     import numpy as np
-    from stable_baselines3 import A2C
     from stable_baselines3.common.env_util import make_vec_env
 
     from tetris_env import TetrisEnv
@@ -392,7 +464,8 @@ def run_model_game(
     action_counts = {str(action): 0 for action in range(5)}
     try:
         vec_env = make_vec_env(TetrisEnv, n_envs=1)
-        model = A2C.load(model_path, env=vec_env)
+        algorithm_class = get_algorithm_class(algorithm)
+        model = algorithm_class.load(model_path, env=vec_env)
         obs = vec_env.reset()
 
         for step in range(int(max_steps)):
@@ -421,6 +494,7 @@ def run_model_game(
                     'terminated': bool(dones[0]),
                     'duration_sec': time.time() - started_at,
                     'model_name': model_name,
+                    'algorithm': algorithm,
                     'action_counts': action_counts,
                 })
             if frame_delay > 0:
@@ -439,6 +513,7 @@ def run_model_game(
     imageio.mimsave(gif_path, frames, loop=0, duration=max(0.03, float(frame_delay) or 0.05))
     stats = {
         'model_name': model_name,
+        'algorithm': algorithm,
         'model_path': model_path,
         'gif_path': gif_path,
         'created_at': time.time(),
@@ -483,19 +558,31 @@ def active_run_from_state():
     if detail and detail.get('status') not in (None, 'running'):
         return None
     return {
-        **run_state,
         **(detail or {}),
+        **run_state,
         'status': 'running',
     }
 
 
-def start_training(name: str, timesteps: int, n_envs: int, resume_from: str | None = None):
+def start_training(name: str, timesteps: int, n_envs: int, resume_from: str | None = None, algorithm: str = 'A2C'):
     logfile = os.path.join(LOGS_DIR, f'{name}.log')
+    source_detail = fetch_run_detail(resume_from) if resume_from else {}
+    base_timesteps = resolve_base_timesteps({'resume_from': resume_from, **(source_detail or {})}) if resume_from else 0
+    if resume_from and source_detail:
+        base_timesteps = int(
+            source_detail.get('final_timesteps')
+            or (source_detail.get('summary') or {}).get('final_timesteps')
+            or base_timesteps
+            or 0
+        )
+    final_timesteps = int(base_timesteps) + int(timesteps)
+    algorithm = (algorithm or resolve_algorithm(source_detail) or 'A2C').upper()
     payload = {
         'name': name,
         'timesteps': int(timesteps),
         'n_envs': int(n_envs),
         'resume_from': resume_from,
+        'algorithm': algorithm,
     }
 
     if not tetris_server_available():
@@ -515,6 +602,9 @@ def start_training(name: str, timesteps: int, n_envs: int, resume_from: str | No
                 'name': name,
                 'requested_timesteps': int(timesteps),
                 'resume_from': resume_from,
+                'base_timesteps': base_timesteps,
+                'final_timesteps': final_timesteps,
+                'algorithm': algorithm,
             })
             return True, f'Started via backend: {name}'
         except requests.HTTPError as exc:
@@ -533,6 +623,7 @@ def start_training(name: str, timesteps: int, n_envs: int, resume_from: str | No
         '--name', name,
         '--timesteps', str(int(timesteps)),
         '--n_envs', str(int(n_envs)),
+        '--algorithm', algorithm,
     ]
     if resume_from:
         cmd.extend(['--resume-from', resume_from])
@@ -546,6 +637,9 @@ def start_training(name: str, timesteps: int, n_envs: int, resume_from: str | No
         'name': name,
         'requested_timesteps': int(timesteps),
         'resume_from': resume_from,
+        'base_timesteps': base_timesteps,
+        'final_timesteps': final_timesteps,
+        'algorithm': algorithm,
     })
     return True, f'Started locally: {name}'
 
@@ -565,24 +659,27 @@ def render_live_monitor(
         current = parse_latest_total_timesteps(log_text) or 0
         base_timesteps = resolve_base_timesteps(detail)
         current_additional = max(0, int(current) - int(base_timesteps))
-        total = int(detail.get('target_timesteps') or detail.get('requested_timesteps') or requested_timesteps or 0)
-        progress = min(1.0, current_additional / total) if total else 0.0
+        additional_target = int(detail.get('target_timesteps') or detail.get('requested_timesteps') or requested_timesteps or 0)
+        final_target = int(detail.get('final_timesteps') or (base_timesteps + additional_target) or additional_target)
+        progress = min(1.0, int(current) / final_target) if final_target else 0.0
         status = detail.get('status') or 'running'
 
-        metric_cols = st.columns(3)
+        metric_cols = st.columns(4)
         metric_cols[0].metric('Run', run_name)
         metric_cols[1].metric('Status', status)
-        metric_cols[2].metric('Zusätzliche Timesteps', f'{total:,}' if total else 'n/a')
+        metric_cols[2].metric('Aktuell', f'{int(current):,}')
+        metric_cols[3].metric('Gesamtziel', f'{final_target:,}' if final_target else 'n/a')
 
         st.progress(progress)
-        if total:
+        if final_target:
             if base_timesteps:
                 st.caption(
-                    f'{current_additional:,} / {total:,} zusätzliche Timesteps '
-                    f'(gesamt: {current:,} / {base_timesteps + total:,})'
+                    f'Gesamt: {int(current):,} / {final_target:,} Timesteps · '
+                    f'Zusätzlich: {current_additional:,} / {additional_target:,} Timesteps · '
+                    f'Basis: {base_timesteps:,}'
                 )
             else:
-                st.caption(f'{current_additional:,} / {total:,} Timesteps')
+                st.caption(f'{int(current):,} / {final_target:,} Timesteps')
         else:
             st.caption(f'{current:,} Timesteps')
 
@@ -619,7 +716,7 @@ if 'new_run_name' not in st.session_state:
 
 with st.sidebar:
     st.header('Navigation')
-    nav_pages = ['Run', 'Spiel', 'Historie']
+    nav_pages = ['Run', 'Spiel', 'Modelle', 'Historie']
     nav_index = nav_pages.index(st.session_state['nav_page']) if st.session_state['nav_page'] in nav_pages else 0
     st.session_state['nav_page'] = st.radio('Ansicht', nav_pages, index=nav_index, key='nav_radio')
     st.divider()
@@ -651,12 +748,13 @@ def render_run_page():
 
     with st.form('new_training_form', border=True):
         st.text_input('Training name', key='new_run_name')
+        algorithm = st.selectbox('Algorithmus', options=ALGORITHMS, index=0)
         timesteps = st.number_input('Timesteps', min_value=1000, value=10000, step=1000)
         n_envs = st.number_input('n_envs', min_value=1, value=4, step=1)
         submitted = st.form_submit_button('Training starten')
 
     if submitted:
-        ok, message = start_training(st.session_state['new_run_name'], int(timesteps), int(n_envs))
+        ok, message = start_training(st.session_state['new_run_name'], int(timesteps), int(n_envs), algorithm=algorithm)
         if ok:
             st.success(message)
             st.rerun()
@@ -685,9 +783,11 @@ def render_run_page():
             key='resume_source_select',
         )
         source_detail = fetch_run_detail(resume_source_name) or {}
+        resume_algorithm = resolve_algorithm(source_detail)
         st.caption(
             f"Ausgewählt: {resume_source_name} · "
-            f"letzte Dauer: {format_duration(source_detail.get('duration_sec'))}"
+            f"letzte Dauer: {format_duration(source_detail.get('duration_sec'))} · "
+            f"Algorithmus: {resume_algorithm}"
         )
         if st.session_state.get('resume_name_source') != resume_source_name:
             st.session_state['resume_name_source'] = resume_source_name
@@ -702,6 +802,7 @@ def render_run_page():
             )
             additional_timesteps = st.number_input('Zusätzliche Timesteps', min_value=1000, value=10000, step=1000)
             env_count = source_detail.get('n_envs') or 4
+            st.text_input('Algorithmus', value=resume_algorithm, disabled=True)
             st.text_input('Env-Anzahl', value=str(env_count), disabled=True)
             resume_submitted = st.form_submit_button('Weiterführen')
 
@@ -723,6 +824,7 @@ def render_run_page():
                     int(additional_timesteps),
                     int(env_count),
                     resume_from=resume_source_name,
+                    algorithm=resume_algorithm,
                 )
                 if ok:
                     st.success(message)
@@ -834,6 +936,7 @@ def render_play_page():
                     gif_path, stats = run_model_game(
                         selected_model['path'],
                         selected_model['name'],
+                        selected_model.get('algorithm', 'A2C'),
                         int(max_steps),
                         float(frame_delay),
                         live_placeholder,
@@ -864,10 +967,62 @@ def render_play_page():
     st.image(selected_gif['path'], caption=selected_gif['name'], use_container_width=False)
 
 
+def render_models_page():
+    st.subheader('Modell-Verwaltung')
+    items = model_management_items()
+    if not items:
+        st.info('Keine Modell-Dateien gefunden.')
+        return
+
+    labels = [f"{item['name']} · {item.get('algorithm', 'A2C')} · {round(item.get('size_bytes', 0) / 1024 / 1024, 2)} MB" for item in items]
+    selected_label = st.selectbox('Modell auswählen', options=labels, key='manage_model_select')
+    item = items[labels.index(selected_label)]
+    summary = item.get('summary') or {}
+
+    metric_cols = st.columns(5)
+    metric_cols[0].metric('Algorithmus', item.get('algorithm') or summary.get('algorithm') or 'A2C')
+    metric_cols[1].metric('Timesteps', f"{int(summary.get('final_timesteps', 0) or 0):,}")
+    metric_cols[2].metric('Envs', summary.get('n_envs', 'n/a'))
+    metric_cols[3].metric('Größe', f"{item.get('size_bytes', 0) / 1024 / 1024:.2f} MB")
+    metric_cols[4].metric('Geändert', format_timestamp(item.get('modified_at')))
+
+    st.caption(f"Modell-Datei: {item['path']}")
+    if os.path.exists(item.get('summary_path', '')):
+        st.caption(f"Summary: {item['summary_path']}")
+    if item.get('related_gifs'):
+        st.caption(f"GIFs: {len(item['related_gifs'])}")
+    if item.get('related_logs'):
+        st.caption(f"Logs: {len(item['related_logs'])}")
+
+    with st.expander('Summary anzeigen', expanded=False):
+        st.json(summary or {'info': 'Keine Summary gefunden.'})
+
+    st.divider()
+    st.subheader('Löschen')
+    if active_run and active_run.get('name') == item['name']:
+        st.warning('Dieses Modell gehört zum aktuell laufenden Run und kann gerade nicht gelöscht werden.')
+        return
+
+    delete_run = st.checkbox('Training-Run/Summary mitlöschen', value=True, key='delete_run_artifacts')
+    delete_gifs = st.checkbox('Trainings-GIFs mitlöschen', value=True, key='delete_gif_artifacts')
+    delete_logs = st.checkbox('Logdateien mitlöschen', value=False, key='delete_log_artifacts')
+    confirm_name = st.text_input('Zum Löschen Modellnamen eintippen', key='delete_model_confirm')
+
+    if st.button('Modell löschen', type='primary'):
+        if confirm_name != item['name']:
+            st.error('Der eingegebene Name passt nicht zum ausgewählten Modell.')
+        else:
+            deleted = delete_model_artifacts(item, delete_run=delete_run, delete_gifs=delete_gifs, delete_logs=delete_logs)
+            st.success(f'{len(deleted)} Datei(en)/Ordner gelöscht.')
+            st.rerun()
+
+
 if st.session_state['nav_page'] == 'Historie':
     render_history_page()
 elif st.session_state['nav_page'] == 'Spiel':
     render_play_page()
+elif st.session_state['nav_page'] == 'Modelle':
+    render_models_page()
 else:
     render_run_page()
 

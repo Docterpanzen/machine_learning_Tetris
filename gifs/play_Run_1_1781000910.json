@@ -1,0 +1,24 @@
+{
+  "model_name": "Run_1",
+  "algorithm": "A2C",
+  "model_path": "/home/oskar/dev/machine_learning/models/Run_1.zip",
+  "gif_path": "/home/oskar/dev/machine_learning/gifs/play_Run_1_1781000910.gif",
+  "created_at": 1781000910.901407,
+  "steps": 126,
+  "max_steps": 300,
+  "removed_lines": 2,
+  "total_reward": 2065.0,
+  "avg_reward": 16.3889,
+  "final_height": 18,
+  "final_holes": 45,
+  "terminated": true,
+  "duration_sec": 5.9,
+  "frame_delay": 0.05,
+  "action_counts": {
+    "0": 67,
+    "1": 6,
+    "2": 0,
+    "3": 20,
+    "4": 33
+  }
+}

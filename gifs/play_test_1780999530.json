@@ -1,0 +1,24 @@
+{
+  "model_name": "test",
+  "algorithm": "A2C",
+  "model_path": "/home/oskar/dev/machine_learning/models/test.zip",
+  "gif_path": "/home/oskar/dev/machine_learning/gifs/play_test_1780999530.gif",
+  "created_at": 1780999530.857658,
+  "steps": 102,
+  "max_steps": 300,
+  "removed_lines": 0,
+  "total_reward": -95.0,
+  "avg_reward": -0.9314,
+  "final_height": 19,
+  "final_holes": 20,
+  "terminated": true,
+  "duration_sec": 6.86,
+  "frame_delay": 0.05,
+  "action_counts": {
+    "0": 0,
+    "1": 0,
+    "2": 102,
+    "3": 0,
+    "4": 0
+  }
+}

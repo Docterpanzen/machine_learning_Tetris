@@ -131,7 +131,10 @@ def init_db():
             resume_from TEXT,
             n_envs INTEGER,
             summary_path TEXT,
-            status TEXT
+            status TEXT,
+            base_timesteps INTEGER,
+            final_timesteps INTEGER,
+            algorithm TEXT
         )
         """
     )
@@ -144,6 +147,9 @@ def init_db():
         'n_envs': 'INTEGER',
         'summary_path': 'TEXT',
         'status': 'TEXT',
+        'base_timesteps': 'INTEGER',
+        'final_timesteps': 'INTEGER',
+        'algorithm': 'TEXT',
     }
     for column_name, column_type in additions.items():
         if column_name not in existing_columns:
@@ -158,7 +164,10 @@ init_db()
 def get_run(name: str):
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
-    cur.execute('SELECT name,pid,log_path,requested_timesteps,created_at,started_at,finished_at,resume_from,n_envs,summary_path,status FROM runs WHERE name=?', (name,))
+    cur.execute(
+        'SELECT name,pid,log_path,requested_timesteps,created_at,started_at,finished_at,resume_from,n_envs,summary_path,status,base_timesteps,final_timesteps,algorithm FROM runs WHERE name=?',
+        (name,),
+    )
     row = cur.fetchone()
     conn.close()
     if not row:
@@ -181,6 +190,9 @@ def get_run(name: str):
         'n_envs': row[8],
         'summary_path': row[9],
         'status': row[10],
+        'base_timesteps': row[11],
+        'final_timesteps': row[12],
+        'algorithm': row[13],
         'duration_sec': duration_sec,
         'summary': summary,
     }
@@ -191,6 +203,7 @@ class StartRequest(BaseModel):
     timesteps: int
     n_envs: int = 1
     resume_from: Optional[str] = None
+    algorithm: str = 'A2C'
 
 
 def load_summary(summary_path: str | None):
@@ -213,12 +226,23 @@ def load_base_timesteps(resume_from: str | None):
 
 def attach_timestep_totals(run: dict):
     summary = run.get('summary') or {}
-    base_timesteps = int(summary.get('base_timesteps', load_base_timesteps(run.get('resume_from'))) or 0)
+    base_timesteps = int(
+        run.get('base_timesteps')
+        if run.get('base_timesteps') is not None
+        else summary.get('base_timesteps', load_base_timesteps(run.get('resume_from')))
+        or 0
+    )
     requested_timesteps = int(run.get('requested_timesteps') or 0)
-    final_timesteps = int(summary.get('final_timesteps', base_timesteps + requested_timesteps) or 0)
+    final_timesteps = int(
+        run.get('final_timesteps')
+        if run.get('final_timesteps') is not None
+        else summary.get('final_timesteps', base_timesteps + requested_timesteps)
+        or 0
+    )
     run['base_timesteps'] = base_timesteps
     run['target_timesteps'] = requested_timesteps
     run['final_timesteps'] = final_timesteps
+    run['algorithm'] = run.get('algorithm') or summary.get('algorithm') or 'A2C'
     return run
 
 
@@ -282,6 +306,13 @@ def start_run(req: StartRequest):
     summary_path = os.path.join(RUNS_DIR, req.name, 'summary.json')
     os.makedirs(os.path.dirname(summary_path), exist_ok=True)
     n_envs = int(req.n_envs)
+    algorithm = (req.algorithm or 'A2C').upper()
+    if req.resume_from:
+        source = get_run(req.resume_from)
+        source_summary = (source or {}).get('summary') or {}
+        algorithm = (source or {}).get('algorithm') or source_summary.get('algorithm') or algorithm or 'A2C'
+    base_timesteps = load_base_timesteps(req.resume_from)
+    final_timesteps = base_timesteps + int(req.timesteps)
     if req.resume_from and not req.n_envs:
         source = get_run(req.resume_from)
         if source and source.get('n_envs'):
@@ -292,6 +323,7 @@ def start_run(req: StartRequest):
         '--name', req.name,
         '--timesteps', str(req.timesteps),
         '--n_envs', str(n_envs),
+        '--algorithm', algorithm,
     ]
     if req.resume_from:
         cmd.extend(['--resume-from', req.resume_from])
@@ -305,13 +337,21 @@ def start_run(req: StartRequest):
     conn = sqlite3.connect(DB_PATH)
     cur = conn.cursor()
     cur.execute(
-        'INSERT OR REPLACE INTO runs (name,pid,log_path,requested_timesteps,created_at,started_at,finished_at,resume_from,n_envs,summary_path,status) VALUES (?,?,?,?,?,?,?,?,?,?,?)',
-        (req.name, proc.pid, logfile, req.timesteps, time.time(), time.time(), None, req.resume_from, n_envs, summary_path, 'running')
+        'INSERT OR REPLACE INTO runs (name,pid,log_path,requested_timesteps,created_at,started_at,finished_at,resume_from,n_envs,summary_path,status,base_timesteps,final_timesteps,algorithm) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        (req.name, proc.pid, logfile, req.timesteps, time.time(), time.time(), None, req.resume_from, n_envs, summary_path, 'running', base_timesteps, final_timesteps, algorithm)
     )
     conn.commit()
     conn.close()
 
-    return {'name': req.name, 'pid': proc.pid, 'log': logfile, 'summary_path': summary_path}
+    return {
+        'name': req.name,
+        'pid': proc.pid,
+        'log': logfile,
+        'summary_path': summary_path,
+        'base_timesteps': base_timesteps,
+        'final_timesteps': final_timesteps,
+        'algorithm': algorithm,
+    }
 
 
 @app.post('/runs/stop/{name}')
