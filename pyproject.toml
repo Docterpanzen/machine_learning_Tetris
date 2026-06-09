@@ -13,3 +13,15 @@ license = {text = "MIT"}
 
 [tool.pdm]
 distribution = false
+
+[tool.pdm.scripts]
+app = "streamlit run streamlit_app/app.py"
+backend = "uvicorn streamlit_app.backend:app --host 127.0.0.1 --port 8000"
+
+[dependency-groups]
+dev = [
+    "streamlit>=1.58.0",
+    "fastapi>=0.115.0",
+    "uvicorn>=0.34.0",
+    "requests>=2.32.0",
+]

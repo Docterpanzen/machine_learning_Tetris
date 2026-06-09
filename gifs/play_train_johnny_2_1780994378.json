@@ -1,0 +1,23 @@
+{
+  "model_name": "train_johnny_2",
+  "model_path": "/home/oskar/dev/machine_learning/models/train_johnny_2.zip",
+  "gif_path": "/home/oskar/dev/machine_learning/gifs/play_train_johnny_2_1780994378.gif",
+  "created_at": 1780994379.09659,
+  "steps": 70,
+  "max_steps": 400,
+  "removed_lines": 0,
+  "total_reward": -80.0,
+  "avg_reward": -1.1429,
+  "final_height": 19,
+  "final_holes": 23,
+  "terminated": true,
+  "duration_sec": 6.32,
+  "frame_delay": 0.05,
+  "action_counts": {
+    "0": 0,
+    "1": 0,
+    "2": 0,
+    "3": 67,
+    "4": 3
+  }
+}

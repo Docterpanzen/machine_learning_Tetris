@@ -1,0 +1,20 @@
+Using cpu device
+Wrapping the env in a VecTransposeImage.
+Logging to ./tb_logs/A2C_2
+------------------------------------
+| rollout/              |          |
+|    ep_len_mean        | 121      |
+|    ep_rew_mean        | -33.2    |
+| time/                 |          |
+|    fps                | 180      |
+|    iterations         | 100      |
+|    time_elapsed       | 44       |
+|    total_timesteps    | 8000     |
+| train/                |          |
+|    entropy_loss       | -0.0988  |
+|    explained_variance | 0.931    |
+|    learning_rate      | 0.0007   |
+|    n_updates          | 99       |
+|    policy_loss        | 0.0275   |
+|    value_loss         | 44.3     |
+------------------------------------

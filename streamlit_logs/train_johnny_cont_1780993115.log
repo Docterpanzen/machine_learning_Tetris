@@ -1,0 +1,145 @@
+↻ Lade Modell zum Weitertrainieren: /home/oskar/dev/machine_learning/models/train_johnny.zip
+Wrapping the env in a VecTransposeImage.
+Erstelle first game gif...
+✓ Modell erstellt, beginne Training...
+Dies kann mehrere Minuten dauern...
+Logging to ./tb_logs/A2C_10
+------------------------------------
+| rollout/              |          |
+|    ep_len_mean        | 93       |
+|    ep_rew_mean        | -95.6    |
+| time/                 |          |
+|    fps                | 140      |
+|    iterations         | 100      |
+|    time_elapsed       | 35       |
+|    total_timesteps    | 15000    |
+| train/                |          |
+|    entropy_loss       | -0.189   |
+|    explained_variance | 0.88     |
+|    learning_rate      | 0.0007   |
+|    n_updates          | 299      |
+|    policy_loss        | 0.409    |
+|    value_loss         | 18.2     |
+------------------------------------
+------------------------------------
+| rollout/              |          |
+|    ep_len_mean        | 94.1     |
+|    ep_rew_mean        | -94.8    |
+| time/                 |          |
+|    fps                | 140      |
+|    iterations         | 200      |
+|    time_elapsed       | 71       |
+|    total_timesteps    | 20000    |
+| train/                |          |
+|    entropy_loss       | -0.128   |
+|    explained_variance | 0.88     |
+|    learning_rate      | 0.0007   |
+|    n_updates          | 399      |
+|    policy_loss        | -0.442   |
+|    value_loss         | 16.9     |
+------------------------------------
+------------------------------------
+| rollout/              |          |
+|    ep_len_mean        | 94.4     |
+|    ep_rew_mean        | -94      |
+| time/                 |          |
+|    fps                | 140      |
+|    iterations         | 300      |
+|    time_elapsed       | 106      |
+|    total_timesteps    | 25000    |
+| train/                |          |
+|    entropy_loss       | -0.601   |
+|    explained_variance | 0.872    |
+|    learning_rate      | 0.0007   |
+|    n_updates          | 499      |
+|    policy_loss        | -0.42    |
+|    value_loss         | 12.3     |
+------------------------------------
+------------------------------------
+| rollout/              |          |
+|    ep_len_mean        | 96       |
+|    ep_rew_mean        | -94.7    |
+| time/                 |          |
+|    fps                | 143      |
+|    iterations         | 400      |
+|    time_elapsed       | 139      |
+|    total_timesteps    | 30000    |
+| train/                |          |
+|    entropy_loss       | -0.0372  |
+|    explained_variance | 0.852    |
+|    learning_rate      | 0.0007   |
+|    n_updates          | 599      |
+|    policy_loss        | 0.859    |
+|    value_loss         | 41.3     |
+------------------------------------
+------------------------------------
+| rollout/              |          |
+|    ep_len_mean        | 98.3     |
+|    ep_rew_mean        | -94.3    |
+| time/                 |          |
+|    fps                | 142      |
+|    iterations         | 500      |
+|    time_elapsed       | 174      |
+|    total_timesteps    | 35000    |
+| train/                |          |
+|    entropy_loss       | -0.0551  |
+|    explained_variance | 0.89     |
+|    learning_rate      | 0.0007   |
+|    n_updates          | 699      |
+|    policy_loss        | 0.61     |
+|    value_loss         | 35.8     |
+------------------------------------
+------------------------------------
+| rollout/              |          |
+|    ep_len_mean        | 95.9     |
+|    ep_rew_mean        | -92.3    |
+| time/                 |          |
+|    fps                | 142      |
+|    iterations         | 600      |
+|    time_elapsed       | 210      |
+|    total_timesteps    | 40000    |
+| train/                |          |
+|    entropy_loss       | -0.106   |
+|    explained_variance | 0.914    |
+|    learning_rate      | 0.0007   |
+|    n_updates          | 799      |
+|    policy_loss        | 0.178    |
+|    value_loss         | 37.5     |
+------------------------------------
+------------------------------------
+| rollout/              |          |
+|    ep_len_mean        | 91.8     |
+|    ep_rew_mean        | -89.5    |
+| time/                 |          |
+|    fps                | 142      |
+|    iterations         | 700      |
+|    time_elapsed       | 246      |
+|    total_timesteps    | 45000    |
+| train/                |          |
+|    entropy_loss       | -0.0377  |
+|    explained_variance | 0.904    |
+|    learning_rate      | 0.0007   |
+|    n_updates          | 899      |
+|    policy_loss        | 0.674    |
+|    value_loss         | 19.2     |
+------------------------------------
+------------------------------------
+| rollout/              |          |
+|    ep_len_mean        | 90.3     |
+|    ep_rew_mean        | -89.5    |
+| time/                 |          |
+|    fps                | 141      |
+|    iterations         | 800      |
+|    time_elapsed       | 282      |
+|    total_timesteps    | 50000    |
+| train/                |          |
+|    entropy_loss       | -0.00161 |
+|    explained_variance | 0.859    |
+|    learning_rate      | 0.0007   |
+|    n_updates          | 999      |
+|    policy_loss        | 0.00111  |
+|    value_loss         | 12.5     |
+------------------------------------
+Erstelle last game gif...
+✓ Summary gespeichert: /home/oskar/dev/machine_learning/training_runs/train_johnny_cont_1780993115/summary.json
+✓ Training abgeschlossen!

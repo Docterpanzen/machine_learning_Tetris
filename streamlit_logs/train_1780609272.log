@@ -1,0 +1,18 @@
+Traceback (most recent call last):
+  File "/home/oskar/dev/machine_learning/streamlit_app/train.py", line 66, in <module>
+    train(args.name, args.timesteps, args.n_envs, args.logdir)
+  File "/home/oskar/dev/machine_learning/streamlit_app/train.py", line 29, in train
+    vec_env = make_vec_env(TetrisEnv, n_envs=n_envs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/stable_baselines3/common/env_util.py", line 126, in make_vec_env
+    vec_env = vec_env_cls([make_env(i + start_index) for i in range(n_envs)], **vec_env_kwargs)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/stable_baselines3/common/vec_env/dummy_vec_env.py", line 31, in __init__
+    self.envs = [_patch_env(fn()) for fn in env_fns]
+                            ^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/stable_baselines3/common/env_util.py", line 99, in _init
+    env = env_id(**env_kwargs)
+          ^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/tetris_env.py", line 41, in __init__
+    self.client_sock.connect((self.server_ip, self.server_port))
+ConnectionRefusedError: [Errno 111] Connection refused

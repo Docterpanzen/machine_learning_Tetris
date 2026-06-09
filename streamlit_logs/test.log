@@ -1,0 +1,86 @@
+Erstelle A2C Modell mit CNN Policy...
+Using cpu device
+Wrapping the env in a VecTransposeImage.
+Erstelle first game gif...
+✓ Modell erstellt, beginne Training...
+Dies kann mehrere Minuten dauern...
+Logging to ./tb_logs/A2C_9
+------------------------------------
+| rollout/              |          |
+|    ep_len_mean        | 93.6     |
+|    ep_rew_mean        | -84.4    |
+| time/                 |          |
+|    fps                | 23       |
+|    iterations         | 100      |
+|    time_elapsed       | 338      |
+|    total_timesteps    | 8000     |
+| train/                |          |
+|    entropy_loss       | -0.0128  |
+|    explained_variance | 0.857    |
+|    learning_rate      | 0.0007   |
+|    n_updates          | 99       |
+|    policy_loss        | -0.00385 |
+|    value_loss         | 27.8     |
+------------------------------------
+Traceback (most recent call last):
+  File "/home/oskar/dev/machine_learning/streamlit_app/train.py", line 149, in <module>
+    
+  File "/home/oskar/d    
+  File "/home/oskar/dev/machine_learning/streamlit_app/train.py", line 108, in train
+    rollout_to_gif(model, vec_env, last_gif_path, max_steps=200)
+  File "/home/oskar/dev/machine_learning/streamlit_app/train.py", line 44, in rollout_to_gif
+    action, _ = model.predict(obs, deterministic=True)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/stable_baselines3/common/base_class.py", line 557, in predict
+    return self.policy.predict(observation, state, episode_start, deterministic)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/stable_baselines3/common/policies.py", line 368, in predict
+    actions = self._predict(obs_tensor, deterministic=deterministic)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/stable_baselines3/common/policies.py", line 717, in _predict
+    return self.get_distribution(observation).get_actions(deterministic=deterministic)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/stable_baselines3/common/policies.py", line 752, in get_distribution
+    return self._get_action_dist_from_latent(latent_pi)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/stable_baselines3/common/policies.py", line 691, in _get_action_dist_from_latent
+    mean_actions = self.action_net(latent_pi)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/torch/nn/mo    return super().extract_features(obs, self.features_extractor if features_extractor is None else features_extractor)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/stable_baselines3/common/policies.py", line 130, in extract_features
+    preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.nor    return F.linear(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+KeyboardInterrupt
+^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/stable_baselines3/common/preprocessing.py", line 119, in preprocess_obs
+    return obs.float() / 255.0
+           ^^^^^^^^^^^
+KeyboardInterrupt
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/stable_baselines3/common/policies.py", line 130, in extract_features
+    preprocessed_obs = preprocess_obs(obs, self.observation_space, normalize_images=self.normalize_images)
+                       ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/stable_baselines3/common/preprocessing.py", line 119, in preprocess_obs
+    return obs.float() / 255.0
+           ^^^^^^^^^^^
+KeyboardInterrupt
+dules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/torch/nn/modules/container.py", line 253, in forward
+    input = module(input)
+            ^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/torch/nn/modules/conv.py", line 565, in forward
+    return self._conv_forward(input, self.weight, self.bias)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/torch/nn/modules/conv.py", line 560, in _conv_forward
+    return F.conv2d(
+           ^^^^^^^^^
+KeyboardInterrupt

@@ -1,0 +1,58 @@
+Erstelle A2C Modell mit CNN Policy...
+Using cpu device
+Wrapping the env in a VecTransposeImage.
+Erstelle first game gif...
+Traceback (most recent call last):
+  File "/home/oskar/dev/machine_learning/streamlit_app/train.py", line 150, in <module>
+    train(args.name, args.timesteps, args.n_envs, args.logdir, resume_from=args.resume_from)
+  File "/home/oskar/dev/machine_learning/streamlit_app/train.py", line 97, in train
+    rollout_to_gif(model, vec_env, first_gif_path, max_steps=120)
+  File "/home/oskar/dev/machine_learning/streamlit_app/train.py", line 44, in rollout_to_gif
+    action, _ = model.predict(obs, deterministic=True)
+                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/stable_baselines3/common/base_class.py", line 557, in predict
+    return self.policy.predict(observation, state, episode_start, deterministic)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/stable_baselines3/common/policies.py", line 368, in predict
+    actions = self._predict(obs_tensor, deterministic=deterministic)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/stable_baselines3/common/policies.py", line 717, in _predict
+    return self.get_distribution(observation).get_actions(deterministic=deterministic)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/stable_baselines3/common/policies.py", line 750, in get_distribution
+    features = super().extract_features(obs, self.pi_features_extractor)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/stable_baselines3/common/policies.py", line 131, in extract_features
+    return features_extractor(preprocessed_obs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/stable_baselines3/common/torch_layers.py", line 105, in forward
+    return self.linear(self.cnn(observations))
+                       ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/torch/nn/modules/container.py", line 253, in forward
+    input = module(input)
+            ^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1778, in _wrapped_call_impl
+    return self._call_impl(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1789, in _call_impl
+    return forward_call(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/torch/nn/modules/activation.py", line 143, in forward
+    return F.relu(input, inplace=self.inplace)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/oskar/dev/machine_learning/.venv/lib/python3.12/site-packages/torch/nn/functional.py", line 1723, in relu
+    result = torch.relu(input)
+             ^^^^^^^^^^^^^^^^^
+KeyboardInterrupt

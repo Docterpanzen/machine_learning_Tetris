@@ -1,0 +1,16 @@
+{
+  "name": "train_johnny_2",
+  "status": "completed",
+  "resume_from": "train_johnny_2",
+  "started_at": 1780994753.09632,
+  "finished_at": 1780994855.4129856,
+  "duration_sec": 102.32,
+  "requested_timesteps": 10000,
+  "base_timesteps": 60000,
+  "final_timesteps": 70000,
+  "n_envs": 10,
+  "model_path": "/home/oskar/dev/machine_learning/models/train_johnny_2.zip",
+  "first_gif": "/home/oskar/dev/machine_learning/gifs/train_johnny_2_first.gif",
+  "last_gif": "/home/oskar/dev/machine_learning/gifs/train_johnny_2_last.gif",
+  "summary_text": "Run 'train_johnny_2' trainiert 10,000 zusätzliche Timesteps in 102.32s mit 10 Envs, weitergeführt von 'train_johnny_2'"
+}

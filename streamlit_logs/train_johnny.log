@@ -1,0 +1,44 @@
+Erstelle A2C Modell mit CNN Policy...
+Using cpu device
+Wrapping the env in a VecTransposeImage.
+Erstelle first game gif...
+✓ Modell erstellt, beginne Training...
+Dies kann mehrere Minuten dauern...
+Logging to ./tb_logs/A2C_10
+-------------------------------------
+| rollout/              |           |
+|    ep_len_mean        | 93.7      |
+|    ep_rew_mean        | -90.5     |
+| time/                 |           |
+|    fps                | 149       |
+|    iterations         | 100       |
+|    time_elapsed       | 33        |
+|    total_timesteps    | 5000      |
+| train/                |           |
+|    entropy_loss       | -5.63e-05 |
+|    explained_variance | 0.818     |
+|    learning_rate      | 0.0007    |
+|    n_updates          | 99        |
+|    policy_loss        | -4.02e-05 |
+|    value_loss         | 8.28      |
+-------------------------------------
+-------------------------------------
+| rollout/              |           |
+|    ep_len_mean        | 94.3      |
+|    ep_rew_mean        | -93.4     |
+| time/                 |           |
+|    fps                | 142       |
+|    iterations         | 200       |
+|    time_elapsed       | 70        |
+|    total_timesteps    | 10000     |
+| train/                |           |
+|    entropy_loss       | -2.71e-05 |
+|    explained_variance | 0.416     |
+|    learning_rate      | 0.0007    |
+|    n_updates          | 199       |
+|    policy_loss        | -6.05e-06 |
+|    value_loss         | 21.3      |
+-------------------------------------
+Erstelle last game gif...
+✓ Summary gespeichert: /home/oskar/dev/machine_learning/training_runs/train_johnny/summary.json
+✓ Training abgeschlossen!
