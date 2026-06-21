@@ -28,7 +28,324 @@ ALGORITHMS = ['A2C', 'PPO']
 os.makedirs(LOGS_DIR, exist_ok=True)
 os.makedirs(GIFS_DIR, exist_ok=True)
 
-st.set_page_config(page_title='Tetris RL Trainer', layout='wide')
+st.set_page_config(
+    page_title='Blocklab · RL Trainer',
+    page_icon='🧱',
+    layout='wide',
+    initial_sidebar_state='expanded',
+)
+
+st.markdown(
+    """
+    <style>
+        :root {
+            --canvas: #f4f1eb;
+            --surface: #fffdf8;
+            --surface-strong: #ffffff;
+            --ink: #172225;
+            --muted: #697477;
+            --line: #dedbd2;
+            --sidebar: #172225;
+            --sidebar-soft: #223034;
+            --accent: #e85d3f;
+            --accent-dark: #be4029;
+            --mint: #45a58e;
+            --warning: #d89c32;
+            --radius: 14px;
+        }
+
+        html, body, [class*="css"] {
+            font-family: Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        }
+
+        [data-testid="stAppViewContainer"] {
+            background:
+                radial-gradient(circle at 92% 2%, rgba(69, 165, 142, .10), transparent 24rem),
+                var(--canvas);
+            color: var(--ink);
+        }
+
+        [data-testid="stHeader"] {
+            background: transparent;
+        }
+
+        [data-testid="stToolbar"], #MainMenu, footer {
+            visibility: hidden;
+        }
+
+        .block-container {
+            max-width: 1440px;
+            padding: 2.25rem 3rem 4rem;
+        }
+
+        .blocklab-hero {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            gap: 2rem;
+            padding: .35rem 0 2rem;
+            margin-bottom: .8rem;
+            border-bottom: 1px solid var(--line);
+        }
+
+        .blocklab-eyebrow {
+            color: var(--accent);
+            font-size: .72rem;
+            font-weight: 800;
+            letter-spacing: .15em;
+            text-transform: uppercase;
+            margin-bottom: .45rem;
+        }
+
+        .blocklab-hero h1 {
+            color: var(--ink);
+            font-size: clamp(2rem, 4vw, 3.35rem);
+            font-weight: 760;
+            letter-spacing: -.055em;
+            line-height: .98;
+            margin: 0;
+        }
+
+        .blocklab-hero p {
+            color: var(--muted);
+            font-size: .98rem;
+            margin: .75rem 0 0;
+        }
+
+        .status-cluster {
+            display: flex;
+            gap: .5rem;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+        }
+
+        .status-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: .42rem;
+            white-space: nowrap;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 999px;
+            color: var(--muted);
+            font-size: .78rem;
+            font-weight: 700;
+            padding: .48rem .72rem;
+        }
+
+        .status-pill::before {
+            content: "";
+            width: .48rem;
+            height: .48rem;
+            border-radius: 50%;
+            background: var(--mint);
+            box-shadow: 0 0 0 3px rgba(69, 165, 142, .14);
+        }
+
+        h1, h2, h3 {
+            color: var(--ink) !important;
+            letter-spacing: -.035em;
+        }
+
+        h2, h3 {
+            font-weight: 730 !important;
+        }
+
+        [data-testid="stSidebar"] {
+            background: var(--sidebar);
+            border-right: 0;
+        }
+
+        [data-testid="stSidebar"] > div:first-child {
+            padding-top: 1.4rem;
+        }
+
+        [data-testid="stSidebar"] * {
+            color: #e9eeeb;
+        }
+
+        .sidebar-brand {
+            padding: .5rem .25rem 1.5rem;
+        }
+
+        .sidebar-brand-mark {
+            display: inline-grid;
+            place-items: center;
+            width: 2.35rem;
+            height: 2.35rem;
+            margin-bottom: .85rem;
+            border-radius: 10px;
+            background: var(--accent);
+            color: white;
+            font-size: 1.15rem;
+            font-weight: 900;
+            box-shadow: 5px 5px 0 rgba(232, 93, 63, .20);
+        }
+
+        .sidebar-brand-name {
+            font-size: 1.18rem;
+            font-weight: 800;
+            letter-spacing: -.025em;
+        }
+
+        .sidebar-brand-copy {
+            color: #93a3a3 !important;
+            font-size: .78rem;
+            margin-top: .18rem;
+        }
+
+        [data-testid="stSidebar"] hr {
+            border-color: rgba(255,255,255,.10);
+        }
+
+        [data-testid="stSidebar"] [role="radiogroup"] {
+            gap: .32rem;
+        }
+
+        [data-testid="stSidebar"] [role="radiogroup"] label {
+            padding: .62rem .7rem;
+            border-radius: 9px;
+            transition: background .15s ease, transform .15s ease;
+        }
+
+        [data-testid="stSidebar"] [role="radiogroup"] label:hover {
+            background: rgba(255,255,255,.07);
+            transform: translateX(2px);
+        }
+
+        [data-testid="stSidebar"] [role="radiogroup"] label:has(input:checked) {
+            background: var(--sidebar-soft);
+            box-shadow: inset 3px 0 0 var(--accent);
+        }
+
+        [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"] {
+            background: transparent;
+            border-color: rgba(255,255,255,.13);
+            color: #dce5e2;
+            text-align: left;
+        }
+
+        [data-testid="stSidebar"] [data-testid="stBaseButton-secondary"]:hover {
+            background: var(--sidebar-soft);
+            border-color: rgba(255,255,255,.24);
+        }
+
+        [data-testid="stForm"],
+        [data-testid="stExpander"] {
+            background: rgba(255, 253, 248, .78);
+            border: 1px solid var(--line) !important;
+            border-radius: var(--radius) !important;
+            box-shadow: 0 8px 28px rgba(41, 49, 48, .035);
+        }
+
+        [data-testid="stForm"] {
+            padding: 1.35rem 1.4rem .9rem;
+        }
+
+        [data-testid="stMetric"] {
+            min-height: 116px;
+            padding: 1rem 1.05rem;
+            background: var(--surface);
+            border: 1px solid var(--line);
+            border-radius: 12px;
+            box-shadow: 0 4px 18px rgba(41, 49, 48, .025);
+        }
+
+        [data-testid="stMetricLabel"] {
+            color: var(--muted);
+            font-size: .76rem;
+            font-weight: 750;
+            letter-spacing: .035em;
+            text-transform: uppercase;
+        }
+
+        [data-testid="stMetricValue"] {
+            color: var(--ink);
+            font-size: 1.85rem;
+            font-weight: 740;
+            letter-spacing: -.045em;
+        }
+
+        .stButton > button,
+        [data-testid="stFormSubmitButton"] > button,
+        .stDownloadButton > button {
+            min-height: 2.75rem;
+            border-radius: 9px;
+            border: 1px solid var(--line);
+            background: var(--surface-strong);
+            color: var(--ink);
+            font-weight: 760;
+            box-shadow: none;
+            transition: transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+        }
+
+        .stButton > button:hover,
+        [data-testid="stFormSubmitButton"] > button:hover {
+            transform: translateY(-1px);
+            border-color: var(--accent);
+            color: var(--accent-dark);
+            box-shadow: 0 7px 18px rgba(42, 49, 48, .09);
+        }
+
+        [data-testid="stBaseButton-primary"],
+        [data-testid="stFormSubmitButton"] > button {
+            background: var(--accent) !important;
+            border-color: var(--accent) !important;
+            color: white !important;
+        }
+
+        [data-testid="stBaseButton-primary"]:hover,
+        [data-testid="stFormSubmitButton"] > button:hover {
+            background: var(--accent-dark) !important;
+            border-color: var(--accent-dark) !important;
+        }
+
+        [data-baseweb="input"] > div,
+        [data-baseweb="select"] > div,
+        [data-testid="stNumberInput"] > div > div {
+            background: var(--surface-strong) !important;
+            border-color: var(--line) !important;
+            border-radius: 9px !important;
+        }
+
+        input, textarea {
+            color: var(--ink) !important;
+        }
+
+        [data-testid="stProgress"] > div > div > div > div {
+            background: var(--mint);
+        }
+
+        [data-testid="stAlert"] {
+            border-radius: 11px;
+            border: 0;
+        }
+
+        [data-testid="stImage"] img {
+            border-radius: 12px;
+            border: 1px solid var(--line);
+            background: #0c1112;
+            box-shadow: 0 12px 32px rgba(23, 34, 37, .10);
+        }
+
+        [data-testid="stCaptionContainer"] {
+            color: var(--muted);
+        }
+
+        hr {
+            border-color: var(--line);
+            margin: 2.25rem 0 !important;
+        }
+
+        @media (max-width: 800px) {
+            .block-container { padding: 1.5rem 1rem 3rem; }
+            .blocklab-hero { align-items: flex-start; flex-direction: column; }
+            .status-cluster { justify-content: flex-start; }
+        }
+    </style>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 def api_get(path: str, timeout: float = 2.0):
@@ -701,11 +1018,25 @@ def render_live_monitor(
         render_snapshot()
 
 
-st.title('Tetris RL - Trainer UI')
-st.caption('Neue Trainings startest du hier. Die Historie zeigt nur abgeschlossene Läufe.')
-
 active_run = active_run_from_state()
 completed_runs = fetch_runs('completed')
+
+st.markdown(
+    """
+    <div class="blocklab-hero">
+        <div>
+            <div class="blocklab-eyebrow">Reinforcement Learning Workspace</div>
+            <h1>Tetris, trainiert.</h1>
+            <p>Runs starten, Modelle prüfen und Fortschritt sichtbar machen.</p>
+        </div>
+        <div class="status-cluster">
+            <span class="status-pill">Workspace bereit</span>
+            <span class="status-pill">Lokale Umgebung</span>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 if 'nav_page' not in st.session_state:
     st.session_state['nav_page'] = 'Run'
@@ -715,21 +1046,43 @@ if 'new_run_name' not in st.session_state:
     st.session_state['new_run_name'] = f'train_{int(time.time())}'
 
 with st.sidebar:
-    st.header('Navigation')
+    st.markdown(
+        """
+        <div class="sidebar-brand">
+            <div class="sidebar-brand-mark">B</div>
+            <div class="sidebar-brand-name">Blocklab</div>
+            <div class="sidebar-brand-copy">Tetris RL workspace</div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
     nav_pages = ['Run', 'Spiel', 'Modelle', 'Historie']
     nav_index = nav_pages.index(st.session_state['nav_page']) if st.session_state['nav_page'] in nav_pages else 0
-    st.session_state['nav_page'] = st.radio('Ansicht', nav_pages, index=nav_index, key='nav_radio')
+    nav_labels = {
+        'Run': '◉  Training',
+        'Spiel': '▷  Playground',
+        'Modelle': '◈  Modelle',
+        'Historie': '↗  Historie',
+    }
+    st.session_state['nav_page'] = st.radio(
+        'Workspace',
+        nav_pages,
+        index=nav_index,
+        key='nav_radio',
+        format_func=lambda page: nav_labels[page],
+    )
     st.divider()
     if active_run:
-        st.subheader('Aktiver Run')
+        st.subheader('Jetzt aktiv')
         st.caption(active_run.get('name', 'n/a'))
         st.caption(f"{active_run.get('requested_timesteps', 0):,} Timesteps")
-    st.subheader('Historie')
+    st.subheader('Letzte Runs')
     if completed_runs:
         for run in completed_runs:
             run_name = run.get('name', 'unknown')
             status = run.get('status', 'completed')
-            label = f'{run_name} · {status}'
+            status_label = 'abgeschlossen' if status == 'completed' else status
+            label = f'{run_name}  ·  {status_label}'
             if st.button(label, key=f'select_{run_name}', use_container_width=True):
                 st.session_state['selected_run'] = run_name
                 st.session_state['nav_page'] = 'Historie'
@@ -739,7 +1092,8 @@ with st.sidebar:
 
 
 def render_run_page():
-    st.subheader('Neues Training')
+    st.subheader('Neuen Lauf aufsetzen')
+    st.caption('Konfiguration festlegen und das Training direkt im Workspace starten.')
     if not tetris_server_available():
         st.warning(
             f'Tetris TCP Server nicht erreichbar auf {TETRIS_SERVER_HOST}:{TETRIS_SERVER_PORT}. '
@@ -747,7 +1101,7 @@ def render_run_page():
         )
 
     with st.form('new_training_form', border=True):
-        st.text_input('Training name', key='new_run_name')
+        st.text_input('Name des Trainings', key='new_run_name')
         algorithm = st.selectbox('Algorithmus', options=ALGORITHMS, index=0)
         timesteps = st.number_input('Timesteps', min_value=1000, value=10000, step=1000)
         n_envs = st.number_input('n_envs', min_value=1, value=4, step=1)
@@ -762,7 +1116,7 @@ def render_run_page():
             st.error(message)
 
     st.divider()
-    st.subheader('Aktiver Status')
+    st.subheader('Live-Status')
     if active_run:
         render_live_monitor(
             active_run.get('name', ''),
@@ -852,6 +1206,7 @@ def render_history_page():
         summary_text = summary.get('summary_text')
 
     st.subheader(selected_run_detail.get('name', 'Training'))
+    st.caption('Ergebnisse und Artefakte dieses Trainingslaufs auf einen Blick.')
     metric_cols = st.columns(5)
     metric_cols[0].metric('Status', selected_run_detail.get('status', 'n/a'))
     metric_cols[1].metric('Dauer', format_duration(selected_run_detail.get('duration_sec')))
@@ -894,7 +1249,8 @@ def render_history_page():
 
 
 def render_play_page():
-    st.subheader('Modell spielen lassen')
+    st.subheader('Modell im Einsatz')
+    st.caption('Beobachte eine trainierte Policy live und werte das Ergebnis direkt aus.')
 
     if not tetris_server_available():
         st.warning(
@@ -968,7 +1324,8 @@ def render_play_page():
 
 
 def render_models_page():
-    st.subheader('Modell-Verwaltung')
+    st.subheader('Modellbibliothek')
+    st.caption('Gespeicherte Policies, Metadaten und zugehörige Artefakte verwalten.')
     items = model_management_items()
     if not items:
         st.info('Keine Modell-Dateien gefunden.')
@@ -1026,7 +1383,7 @@ elif st.session_state['nav_page'] == 'Modelle':
 else:
     render_run_page()
 
-if st.button('Seite neu laden'):
+if st.button('↻  Ansicht aktualisieren'):
     if hasattr(st, 'rerun'):
         st.rerun()
     else:

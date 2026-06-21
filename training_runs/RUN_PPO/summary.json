@@ -1,0 +1,17 @@
+{
+  "name": "RUN_PPO",
+  "status": "completed",
+  "resume_from": null,
+  "started_at": 1782039646.5505114,
+  "finished_at": 1782060771.8565302,
+  "duration_sec": 21125.31,
+  "requested_timesteps": 600000,
+  "base_timesteps": 0,
+  "final_timesteps": 600000,
+  "n_envs": 20,
+  "algorithm": "PPO",
+  "model_path": "/home/oskar/dev/machine_learning/models/RUN_PPO.zip",
+  "first_gif": "/home/oskar/dev/machine_learning/gifs/RUN_PPO_first.gif",
+  "last_gif": "/home/oskar/dev/machine_learning/gifs/RUN_PPO_last.gif",
+  "summary_text": "Run 'RUN_PPO' trainiert 600,000 zusätzliche Timesteps in 21125.31s mit 20 Envs und PPO"
+}

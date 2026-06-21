@@ -1,0 +1,24 @@
+{
+  "model_name": "RUN_PPO",
+  "algorithm": "PPO",
+  "model_path": "/home/oskar/dev/machine_learning/models/RUN_PPO.zip",
+  "gif_path": "/home/oskar/dev/machine_learning/gifs/play_RUN_PPO_1782062800.gif",
+  "created_at": 1782062801.1677253,
+  "steps": 204,
+  "max_steps": 300,
+  "removed_lines": 0,
+  "total_reward": -50.0,
+  "avg_reward": -0.2451,
+  "final_height": 19,
+  "final_holes": 72,
+  "terminated": true,
+  "duration_sec": 13.3,
+  "frame_delay": 0.05,
+  "action_counts": {
+    "0": 105,
+    "1": 82,
+    "2": 7,
+    "3": 1,
+    "4": 9
+  }
+}

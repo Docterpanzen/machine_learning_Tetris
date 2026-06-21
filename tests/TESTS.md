@@ -1,50 +1,33 @@
-Tests — Übersicht
+# Tests
 
-Dieser Ordner enthält Beispieltests für das Projekt. Ziel ist nicht, das komplette Training in CI laufen zu lassen, sondern:
+Die Tests sollen schnelle, deterministische Fehler erkennen, ohne ein vollständiges RL-Training oder die Java-JAR zu starten.
 
-- Unit-Tests für deterministische Funktionen (z.B. Reward-Berechnung)
-- Env-API-Checks (Verwendung von `check_env`)
-- Integrationstest-Beispiel mit TCP-Stub (simuliert Java-Server)
-
-Dateien
-
-- `test_reward.py` — Unit-Tests für die Reward-Logik (beispielhafte, isolierte Funktion `compute_reward`).
-- `test_env_api.py` — Integrationstest, der einen einfachen TCP-Stub startet. Der Test überspringt sich automatisch, wenn `TetrisEnv` nicht importierbar ist.
-
-Wie man die Tests ausführt
-
-1. Stelle sicher, dass die Test-Dependencies installiert sind (pytest):
+## Ausführen
 
 ```bash
-pdm add -d pytest
 pdm install
-```
-
-oder systemweit:
-
-```bash
-python -m pip install pytest
-```
-
-2. Tests ausführen mit `pdm` (empfohlen):
-
-```bash
 pdm run pytest -q
 ```
 
-oder direkt (wenn du `pdm`-venv aktiviert hast):
+## Dateien
 
-```bash
-pytest -q
-```
+- `test_reward.py` prüft konkrete Beispiele der derzeitigen Reward-Gewichtung.
+- `test_env_api.py` ist als TCP-Integrationstest auf Port `10613` angelegt und soll die echte `TetrisEnv`, `reset()` und `step()` prüfen.
 
-Hinweise
+Der Stub sendet dasselbe grundlegende Binärformat wie der Java-Server: Game-Over-Byte, Zeilen, Höhe, Löcher, Bildlänge und PNG.
 
-- Der Integrationstest (`test_tetrisenv_with_stub`) erwartet, dass die `TetrisEnv`-Klasse in ein importierbares Modul (`tetris_env.py`) verschoben wird. Wenn du die Klasse noch im Notebook hast, wird dieser Test automatisch übersprungen.
-- Extrahiere die Reward-Berechnung in eine Funktion (z. B. `compute_reward`) innerhalb deines Projektmoduls, damit `test_reward.py` direkt die Produktionsfunktion importieren kann, anstatt die Testimplementierung zu verwenden.
-- Halte Smoke-Tests kurz (z.B. <= 500 Steps) für CI.
+Im aktuellen Projektstand ergibt `pdm run pytest -q` drei bestandene Reward-Tests und einen übersprungenen TCP-Test, weil `TetrisEnv` über den Pytest-Konsolenaufruf nicht aufgelöst wird. Bei einem erzwungenen Projektimport muss außerdem das eingebettete Test-PNG mit der aktuellen OpenCV-Version kompatibel sein. Der Integrationstest ist deshalb gegenwärtig Testgerüst, noch keine verlässliche Abdeckung.
 
-Wenn du möchtest, kann ich:
+## Abgrenzung
 
-- `TetrisEnv` in ein Modul `tetris_env.py` extrahieren und die Tests so zum Laufen bringen,
-- eine GitHub Actions CI-Workflow-Datei anlegen, die die Tests kurz laufen lässt.
+Die Suite prüft derzeit nicht:
+
+- Qualität oder Konvergenz eines trainierten Modells,
+- einen vollständigen Run über FastAPI,
+- die Streamlit-Darstellung,
+- die echte Java-JAR,
+- A2C/PPO-Hyperparameter.
+
+Die Reward-Berechnung ist in `test_reward.py` aktuell als kleine Referenzfunktion dupliziert. Für stärkeren Schutz sollte sie künftig aus `tetris_env.py` importiert werden, nachdem die Produktionslogik dort in eine eigenständige `compute_reward`-Funktion extrahiert wurde.
+
+Für den TCP-Test sollten zusätzlich der Projektroot als Pytest-Pythonpfad konfiguriert und ein nachweislich gültiges PNG-Testfixture verwendet werden.

@@ -1,29 +1,29 @@
-Streamlit UI for Tetris Reinforcement Learning
+# Blocklab-Frontend
 
-Run the Streamlit app to control training runs, see logs and view generated GIFs.
+`app.py` ist die Streamlit-Oberfläche des Tetris-RL-Projekts. Sie verändert keine Trainingsdaten selbst, sondern koordiniert Eingaben, API-Aufrufe und die Darstellung vorhandener Artefakte.
 
-Usage:
+## Start
 
-1. Install Streamlit in your pdm environment:
-
-```bash
-pdm add -d streamlit
-pdm install
-```
-
-2. Launch the app:
+Das Backend sollte zuerst laufen:
 
 ```bash
-pdm run streamlit run streamlit_app/app.py
+pdm run backend
+pdm run app
 ```
 
-What it does:
+Die App ist standardmäßig unter `http://127.0.0.1:8501` erreichbar.
 
-- Start a training run (`train.py`) as a background subprocess
-- Capture stdout/stderr into `streamlit_logs/<name>.log`
-- Display the log tail and any generated GIFs from `gifs/`
+## Bereiche
 
-Notes:
+- **Training:** A2C/PPO starten, Live-Log sehen und Modelle fortsetzen
+- **Playground:** Modelle deterministisch ausführen, GIFs und Statistiken speichern
+- **Modelle:** Metadaten anzeigen und Artefakte kontrolliert löschen
+- **Historie:** abgeschlossene Runs und Vorher-/Nachher-GIFs vergleichen
 
-- The app calls `streamlit_app/train.py` which expects the project to provide `tetris_env.TetrisEnv` and Stable Baselines3.
-- For production you may want to run training as a managed service and show logs via a logging backend.
+## Datenzugriff
+
+Bevorzugt ruft das Frontend FastAPI unter `http://127.0.0.1:8000` auf. Ist die API nicht erreichbar, liest es vorhandene `summary.json`-Dateien, Logs und Modelle direkt. Beim Trainingsstart kann es ebenfalls auf einen lokalen Subprozess zurückfallen; der Tetris-Server muss in jedem Fall auf Port `10612` erreichbar sein.
+
+Das visuelle Theme steht in `.streamlit/config.toml`; ergänzende Komponentenstile liegen am Anfang von `app.py`.
+
+Die vollständige Architektur ist in [../docs/Tetris_Reinforcement_learning.md](../docs/Tetris_Reinforcement_learning.md) dokumentiert.

@@ -1,0 +1,17 @@
+Erstelle PPO Modell mit CNN Policy...
+Using cpu device
+Wrapping the env in a VecTransposeImage.
+Erstelle first game gif...
+✓ Modell erstellt, beginne Training...
+Dies kann mehrere Minuten dauern...
+Logging to ./tb_logs/PPO_1
+---------------------------------
+| rollout/           |          |
+|    ep_len_mean     | 46.7     |
+|    ep_rew_mean     | -49.1    |
+| time/              |          |
+|    fps             | 245      |
+|    iterations      | 1        |
+|    time_elapsed    | 167      |
+|    total_timesteps | 40960    |
+---------------------------------

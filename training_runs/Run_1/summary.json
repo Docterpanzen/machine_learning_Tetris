@@ -2,16 +2,16 @@
   "name": "Run_1",
   "status": "completed",
   "resume_from": "Run_1",
-  "started_at": 1781001084.1595979,
-  "finished_at": 1781001578.9396746,
-  "duration_sec": 494.78,
-  "requested_timesteps": 100000,
-  "base_timesteps": 800000,
-  "final_timesteps": 900000,
+  "started_at": 1782037466.862169,
+  "finished_at": 1782038505.5093007,
+  "duration_sec": 1038.65,
+  "requested_timesteps": 200000,
+  "base_timesteps": 1000000,
+  "final_timesteps": 1200000,
   "n_envs": 20,
   "algorithm": "A2C",
   "model_path": "/home/oskar/dev/machine_learning/models/Run_1.zip",
   "first_gif": "/home/oskar/dev/machine_learning/gifs/Run_1_first.gif",
   "last_gif": "/home/oskar/dev/machine_learning/gifs/Run_1_last.gif",
-  "summary_text": "Run 'Run_1' trainiert 100,000 zusätzliche Timesteps in 494.78s mit 20 Envs und A2C, weitergeführt von 'Run_1'"
+  "summary_text": "Run 'Run_1' trainiert 200,000 zusätzliche Timesteps in 1038.65s mit 20 Envs und A2C, weitergeführt von 'Run_1'"
 }

@@ -1,360 +1,227 @@
-# Setup-Anleitung — Tetris Reinforcement Learning
+# Setup und Troubleshooting
 
-Diese Anleitung hilft dir, die Entwicklungsumgebung vollständig einzurichten: Java installieren, Python-Umgebung einrichten (PDM), Abhängigkeiten installieren und typische Fehler beheben.
+Diese Anleitung bezieht sich auf die aktuelle Web-App mit FastAPI, Streamlit, `TetrisEnv` und Java-Tetris-Server. Die fachliche Gesamtdokumentation steht in [Tetris_Reinforcement_learning.md](Tetris_Reinforcement_learning.md).
 
-## 1) Java 17 installieren (JRE)
+## 1. Voraussetzungen prüfen
 
-Auf Ubuntu/Debian-basierten Systemen:
+```bash
+java -version
+pdm --version
+pdm run python --version
+```
+
+Das Projekt erwartet Python 3.12 und eine Java-Laufzeit, die `TetrisTCPserver_v0.6.jar` ausführen kann.
+
+Auf Ubuntu/Debian kann Java beispielsweise so installiert werden:
 
 ```bash
 sudo apt update
 sudo apt install -y openjdk-17-jre-headless
-java -version
 ```
 
-Wenn `openjdk-17` nicht gefunden wird, verwende die paket-spezifische Version `openjdk-17-jre-headless` (wie oben). Falls dein System eine andere Distribution ist, nutze den Paketmanager deiner Distribution oder lade OpenJDK von adoptopenjdk/Temurin.
+## 2. Python-Abhängigkeiten installieren
 
-## 2) Python-Umgebung mit PDM
-
-Projekt verwendet `pdm` zur Paketverwaltung. Falls du `pdm` nicht installiert hast:
-
-```bash
-python3 -m pip install --user pdm
-# oder systemweit
-# pip install pdm
-```
-
-Initialisiere / aktiviere die venv (falls vorhanden):
-
-```bash
-# Optional: nutze die im Projekt erstellte venv
-source .venv/bin/activate
-# Oder pdm-venv aktivieren
-pdm venv activate
-```
-
-## 3) Abhängigkeiten installieren
-
-Wenn du die `pdm.lock` bereits hast (empfohlen), installiere genau die gelockten Versionen:
+Im Projektroot:
 
 ```bash
 pdm install
 ```
 
-Wenn du zusätzliche Pakete hinzufügen willst oder eine frische Installation ohne Lock:
+`pdm.lock` hält die aufgelösten Versionen fest. Befehle sollten über `pdm run ...` ausgeführt werden, damit garantiert die Projektumgebung verwendet wird.
+
+## 3. Empfohlener Start
+
+Terminal 1:
 
 ```bash
-pdm add "stable-baselines3[extra] >= 2.0.0a5"
-pdm add ipykernel gymnasium opencv-python imageio numpy
-# oder alle Anforderungen auf einmal (wenn du pyproject.toml angepasst hast)
-pdm lock
-pdm install
+pdm run backend
 ```
 
-Falls du Jupyter-Notebook-Kernel registrieren willst:
+Terminal 2:
 
 ```bash
-pdm run python -m ipykernel install --user --name=machine_learning --display-name="machine_learning-3.12"
+pdm run app
 ```
-
-## 4) Java-Tetris-Server starten
-
-Stelle sicher, dass `TetrisTCPserver_v0.6.jar` im Projektverzeichnis liegt. Zum Starten im Hintergrund (Notebook-Cell):
-
-```python
-import subprocess
-server_process = subprocess.Popen(["java", "-jar", "TetrisTCPserver_v0.6.jar" ])
-```
-
-In Shell:
-
-```bash
-java -jar TetrisTCPserver_v0.6.jar &
-```
-
-Der Server sollte auf Port `10612` lauschen (siehe Notebook-Ausgabe).
-
-## 5) Notebook ausführen (Empfohlene Reihenfolge)
-
-1. Öffne `Tetris_Reinforcement_learning.ipynb`
-2. Starte Kernel (verwende die `pdm`-venv oder `.venv`)
-3. Führe die Import-Zelle aus
-4. Führe die Zelle zum Starten des Java-Servers aus
-5. Führe die Zelle mit der `TetrisEnv`-Definition aus
-6. Führe `check_env(env)` aus
-7. Erstelle `vec_env` und trainiere das Modell
-8. Testen & GIF erstellen
-
-Wichtig: Nach jeder Paket-Änderung `Kernel → Restart` im Notebook ausführen.
-
-## 6) Häufige Fehler & Lösungen
-
-- `python: No module named pip` beim Versuch, `ipykernel` zu installieren:
-  - Lösung: Verwende `pdm install` statt `python -m pip`, oder aktiviere die venv mit `source .venv/bin/activate`.
-
-- `AssertionError: Your environment must inherit from the gym.Env` bei `check_env`:
-  - Ursache: Alte `stable-baselines3` oder Kernel lädt noch eine alte Version.
-  - Lösung: `pdm add "stable-baselines3[extra] >= 2.0.0a5"`, `pdm install` → Kernel-Neustart, dann Zellen neu ausführen.
-
-- `ConnectionRefusedError` beim Erzeugen von `TetrisEnv()`:
-  - Ursache: Java-Server läuft nicht oder lauscht auf anderem Port.
-  - Lösung: Starte `TetrisTCPserver_v0.6.jar` und prüfen, dass Port `10612` offen ist. In der Shell:
-
-```bash
-ss -lntp | grep 10612
-# oder
-netstat -lntp | grep 10612
-```
-
-- `ModuleNotFoundError` in Notebook (Module installiert, aber nicht gefunden):
-  - Ursache: Notebook-Kernel verwendet eine andere Python-Umgebung als die `pdm`-venv.
-  - Lösung: Stelle in VS Code / Jupyter sicher, dass der Kernel auf `.venv/bin/python` bzw. `pdm` venv eingestellt ist oder installiere den Kernel mit `pdm run python -m ipykernel install ...`.
-
-- `stable-baselines3`-Versionen und Kompatibilität:
-  - SB3 1.x ist nicht vollständig kompatibel mit `gymnasium`. Verwende die SB3 2.x alpha/beta für Gymnasium-Unterstützung.
-
-## 7) Quick-check Befehle
-
-```bash
-# Prüfe Java
-java -version
-
-# Prüfe Python in venv
-source .venv/bin/activate
-python -c "import sys, site; print(sys.executable); print(site.getsitepackages())"
-
-# Installiere alle Abhängigkeiten
-pdm install
-
-# Starte Notebook
-pdm run jupyter lab
-```
-
----
-
-Wenn du willst, kann ich jetzt noch: 
-- die README-Links überprüfen (automatisch öffnen/lesen),
-- die Setup-Datei auf Englisch übersetzen, oder
-- eine Troubleshooting-Seite mit Log-Beispielen anlegen.# Setup & Troubleshooting — Tetris Reinforcement Learning
-
-Diese Anleitung führt dich Schritt für Schritt durch die Einrichtung der Entwicklungsumgebung, das Starten des Java-Tetris-Servers und die Installation der Python-Abhängigkeiten mit `pdm`. Außerdem sind häufige Fehler und schnelle Lösungswege aufgeführt.
-
-## 1) Systemanforderungen
-
-- Linux (Anleitung unten). Auf macOS/Windows weichen einige Befehle ab.
-- Java 17 JRE (oder JDK)
-- `pdm` (Python-Dependency-Manager)
-- Git (optional)
-
-## 2) Java 17 installieren (Ubuntu/Debian)
-
-```bash
-sudo apt update
-sudo apt install -y openjdk-17-jre-headless
-java -version
-```
-
-macOS (Homebrew):
-
-```bash
-brew install openjdk@17
-# ggf. PATH anpassen
-```
-
-Windows: lade das JRE/JDK von adoptium.net oder adoptopenjdk.net und installiere es.
-
-Prüfe die Installation mit:
-
-```bash
-java -version
-# Ausgabe sollte Java 17 zeigen
-```
-
-## 3) Projekt klonen / in das Projektverzeichnis wechseln
-
-```bash
-cd /path/to/project
-# falls noch nicht geklont:
-# git clone <repo>
-```
-
-## 4) PDM-Umgebung nutzen
-
-Wenn `pdm` noch nicht installiert ist, installiere es (System-weit oder in einer venv):
-
-```bash
-python -m pip install --user pdm
-```
-
-Initiale Installation aller Abhängigkeiten (aus `pyproject.toml` / `pdm.lock`):
-
-```bash
-pdm install
-```
-
-Wenn du ein Paket hinzufügen willst (z. B. Stable Baselines3):
-
-```bash
-pdm add "stable-baselines3[extra] >= 2.0.0a5"
-pdm add -d ipykernel
-```
-
-Hinweis: `pdm install` verwendet `pdm.lock` (falls vorhanden) und installiert exakt die gesperrten Versionen.
-
-## 5) venv/Kernel aktivieren und `ipykernel` registrieren
-
-Es gibt zwei Optionen:
-
-- Arbeitsweise mit `pdm run` (empfohlen für Konsistenz), oder
-- die `pdm`-venv als Kernel in Jupyter registrieren.
-
-Aktiviere venv (wenn du die Shell-venv verwendest):
-
-```bash
-source .venv/bin/activate
-```
-
-Oder aktiviere pdm-venv (pdm venv aktivieren):
-
-```bash
-pdm venv activate  # falls pdm die venv verwaltet
-```
-
-`ipykernel` in Jupyter registrieren (damit der Kernel in VS Code / Notebook auswählbar ist):
-
-```bash
-pdm run python -m ipykernel install --user --name=machine_learning --display-name="machine_learning-3.12"
-```
-
-Danach wähle in VS Code den Kernel `machine_learning-3.12` aus und starte den Notebook-Kernel neu.
-
-## 6) Java-Tetris-Server starten
-
-Stelle sicher, dass `TetrisTCPserver_v0.6.jar` im Projektverzeichnis liegt.
-
-```bash
-# im Projektordner
-java -jar TetrisTCPserver_v0.6.jar &
-# prüfen, ob Port 10612 hört (Linux):
-ss -ltnp | grep 10612
-```
-
-Die Notebook-Zelle zum Starten des Servers macht das automatisch, du kannst sie aber auch manuell laufen lassen.
-
-## 7) Notebook ausführen — empfohlene Reihenfolge
-
-1. Zellen mit Imports ausführen
-2. Java-Server starten (oder vorher manuell starten)
-3. `TetrisEnv`-Definition ausführen
-4. `check_env(env)` ausführen (prüft Gym-API-Protokoll)
-5. Parallele Umgebungen erzeugen (`make_vec_env`) und trainieren
-
-Wichtig: Nach jeder Paketinstallation Kernel neu starten.
-
-## 8) Häufige Fehler und schnelle Lösungen
-
-### Problem A — `python: No module named pip` oder `ipykernel` konnte nicht installiert werden
-
-Ursache: venv ist nicht vollständig initialisiert oder `pip`/`ensurepip` fehlt.
-
-Lösung (mit `pdm`-Kontext):
-
-```bash
-# Versuch zuerst mit pdm:
-pdm install
-# Falls pip im venv fehlt:
-python -m ensurepip --upgrade
-python -m pip install --upgrade pip
-# Dann ipykernel über pdm installieren bzw. registrieren:
-pdm add -d ipykernel
-pdm run python -m ipykernel install --user --name=machine_learning --display-name="machine_learning-3.12"
-```
-
-Wenn du `sudo` verwenden musst, vermeide die Installation in die System-Python-Umgebung — besser ist die Nutzung von `pdm`.
-
----
-
-### Problem B — `AssertionError: Your environment must inherit from the gym.Env class`
-
-Ursache: Kernel hatte eine ältere `stable-baselines3`-Version geladen (z. B. 1.x), die andere Checks erwartet.
 
 Prüfen:
 
-```python
-import stable_baselines3
-print(stable_baselines3.__version__)
-import gymnasium as gym
-print(gym.__file__)
+```bash
+curl http://127.0.0.1:8000/runs
+curl http://127.0.0.1:8501/_stcore/health
 ```
 
-Lösung:
-
-- Stelle sicher, dass `stable-baselines3` >= 2.0 (oder die im Projekt benötigte Variante) installiert ist:
+Das Backend startet die Java-JAR automatisch. Ein manueller Start ist nur nötig, wenn ohne Backend gearbeitet wird:
 
 ```bash
-pdm add "stable-baselines3[extra] >= 2.0.0a5"
+java -jar TetrisTCPserver_v0.6.jar
 ```
 
-- Kernel neu starten (unbedingt) damit die neue SB3-Version importiert wird.
+## 4. `ConnectionRefusedError` oder „Tetris TCP Server nicht erreichbar“
 
----
+Ursache: Auf `127.0.0.1:10612` läuft kein Tetris-Server.
 
-### Problem C — `ConnectionRefusedError` beim Erzeugen von `TetrisEnv()`
+```bash
+ss -ltnp | grep 10612
+tail -n 100 streamlit_logs/tetris_server.log
+ls -l TetrisTCPserver_v0.6.jar
+```
 
-Ursache: Java-Server läuft nicht oder wurde auf anderem Port gestartet.
+Mögliche Lösungen:
 
-Lösung:
+- Backend neu starten, damit es die JAR startet.
+- Java-Installation mit `java -version` prüfen.
+- Sicherstellen, dass die JAR im Projektroot liegt.
+- Einen bereits hängenden Java-Prozess kontrolliert beenden und danach das Backend neu starten.
 
-- Java-Server starten: `java -jar TetrisTCPserver_v0.6.jar` oder die Notebook-Zelle ausführen.
-- Prüfe Logs/Terminal-Ausgabe des Servers.
-- Prüfe Port mit `ss -ltnp | grep 10612`.
+## 5. Backend ist nicht erreichbar
 
----
+```bash
+curl -v http://127.0.0.1:8000/runs
+pdm run backend
+```
 
-### Problem D — `check_env` findet Methoden/Return-Tuple nicht korrekt
+Häufige Ursachen:
 
-Ursache: `step()` oder `reset()` liefern nicht die erwartete Signatur.
+- Port `8000` ist bereits belegt.
+- Uvicorn wurde aus einem anderen Arbeitsverzeichnis gestartet.
+- Entwicklungsabhängigkeiten wurden nicht installiert.
+- Beim Import tritt ein Python-Fehler auf; dieser steht im Backend-Terminal.
 
-Erwartetes `step()`-Return:
+Das Frontend kann vorhandene Summarys lokal anzeigen, aber Prozessverwaltung und automatischer Java-Start fehlen ohne Backend.
+
+## 6. Streamlit startet nicht oder zeigt das alte Theme
+
+```bash
+pdm run app
+```
+
+Nach Änderungen an `.streamlit/config.toml` Streamlit vollständig beenden und neu starten. Ein Browser-Reload allein übernimmt Theme-Konfigurationen nicht immer.
+
+Wenn Port `8501` belegt ist:
+
+```bash
+pdm run streamlit run streamlit_app/app.py --server.port 8502
+```
+
+## 7. Run bleibt auf `running`
+
+Der Status wird aus PID, SQLite-Eintrag und vorhandener `summary.json` abgeleitet.
+
+```bash
+cat streamlit_logs/current_run.json
+tail -n 200 streamlit_logs/<runname>.log
+ls -l training_runs/<runname>/summary.json
+```
+
+- Lebt der Prozess noch, läuft das Training möglicherweise weiter.
+- Ist der Prozess beendet und eine Summary vorhanden, setzt ein erneuter API-Abruf den Status auf `completed`.
+- Ohne Summary wird ein beendeter Prozess als `stopped` behandelt.
+
+## 8. Training erzeugt kein Modell oder keine Summary
+
+Zuerst das Runlog prüfen:
+
+```bash
+tail -n 250 streamlit_logs/<runname>.log
+```
+
+Typische Ursachen:
+
+- TCP-Verbindung ist während des Trainings abgebrochen.
+- Zu viele parallele Environments überlasten Server oder Rechner.
+- Zu wenig Arbeitsspeicher für Bilddaten und CNN.
+- Quellmodell eines Fortsetzungs-Runs fehlt oder passt nicht zum Algorithmus.
+- Der Prozess wurde vor `model.save()` beendet.
+
+Mit einer kleineren Konfiguration gegenprüfen:
+
+```bash
+pdm run python streamlit_app/train.py \
+  --name smoke_test \
+  --timesteps 1000 \
+  --n_envs 1 \
+  --algorithm A2C
+```
+
+## 9. Fortsetzen eines Modells schlägt fehl
+
+Prüfen:
+
+```bash
+ls -lh models/<quellname>.zip
+cat training_runs/<quellname>/summary.json
+```
+
+Der Algorithmus muss zur gespeicherten Modellklasse passen. Die Web-App übernimmt A2C oder PPO automatisch aus der Quelle. Bei direktem CLI-Aufruf muss `--algorithm` passend gesetzt werden.
+
+Einen neuen Zielnamen verwenden, damit Quellmodell und Historie nicht überschrieben werden.
+
+## 10. Gymnasium- oder Observation-Fehler
+
+Die erwarteten Signaturen sind:
 
 ```python
-observation, reward, terminated, truncated, info
+reset() -> observation, info
+step(action) -> observation, reward, terminated, truncated, info
 ```
 
-Erwartetes `reset()`-Return:
+Die Observation muss `shape == (200, 100, 3)` und `dtype == uint8` haben. Wenn OpenCV `None` liefert, ist das empfangene PNG ungültig oder unvollständig.
 
-```python
-observation, info
+Umgebung und Versionen prüfen:
+
+```bash
+pdm run python -c "import gymnasium, stable_baselines3; print(gymnasium.__version__, stable_baselines3.__version__)"
+pdm run pytest -q
 ```
 
-Lösung:
+## 11. Notebook verwendet falsche Pakete
 
-- Prüfe, dass alle diese Werte geliefert werden und `observation` in den Bereich `observation_space` passt.
-- Testweise kann man `print(type(observation), observation.shape)` in `step()` ausgeben.
+Die Web-App benötigt keinen Notebook-Kernel. Für die experimentellen Notebooks kann der Projektinterpreter registriert werden:
 
----
+```bash
+pdm run python -m ipykernel install \
+  --user \
+  --name machine_learning \
+  --display-name "machine_learning-3.12"
+```
 
-### Problem E — Notebook zeigt alte Versionen nach `pdm add`/`pdm install`
+Danach diesen Kernel auswählen und nach Paketänderungen neu starten.
 
-Ursache: Kernel wurde nicht neu gestartet oder VS Code verwendet anderen Interpreter.
+## 12. TensorBoard zeigt keine Daten
 
-Lösung:
+```bash
+pdm run tensorboard --logdir tb_logs
+find tb_logs -name 'events.out.tfevents.*' | head
+```
 
-1. Kernel neu starten in Jupyter/VS Code
-2. In VS Code: Python-Interpreter (unten rechts) auf die `pdm`-venv setzen (`.venv/bin/python`)
-3. Prüfen mit `import stable_baselines3; print(stable_baselines3.__version__)`
+Ein Eventfile entsteht erst, wenn Stable Baselines3 tatsächlich mit dem Lernen begonnen hat. Der Standardpfad eines direkten Trainings kann mit `--logdir` geändert werden.
 
-## 9) Quick-checkliste zum Debuggen
+## 13. Tests
 
-- Läuft Java? `java -version` / `ss -ltnp | grep 10612`
-- Stimmt der Kernel? Kernel neu starten, Kernel auf `machine_learning-3.12` setzen
-- SB3-Version prüfen: `pdm run python -c "import stable_baselines3; print(stable_baselines3.__version__)"`
-- ipykernel registriert? `jupyter kernelspec list`
+```bash
+pdm run pytest -q
+```
 
-## 10) Weiteres
+Der TCP-Integrationstest verwendet Port `10613`, nicht den echten Port `10612`. Ist `10613` bereits belegt, kann der Test fehlschlagen. Die Java-JAR ist für diesen Test nicht erforderlich.
 
-Wenn du willst, kann ich die `pyproject.toml` prüfen und ggf. eine präzisere Liste von Abhängigkeiten in `pyproject.toml` vorschlagen, oder die README um eine englische Variante erweitern.
+## 14. Diagnose-Checkliste
 
----
+```bash
+# Prozesse und Ports
+ss -ltnp | grep -E '8000|8501|10612'
 
-Datei: `docs/SETUP.md`
+# API
+curl http://127.0.0.1:8000/runs
+
+# Versionen
+pdm list --freeze
+
+# Logs
+tail -n 100 streamlit_logs/tetris_server.log
+tail -n 100 streamlit_logs/<runname>.log
+
+# Tests
+pdm run pytest -q
+```
+
+Beim Debuggen zuerst von unten nach oben vorgehen: Java-Server, `TetrisEnv`, Trainingsprozess, FastAPI und zuletzt Streamlit. So lässt sich die fehlerhafte Schicht schneller eingrenzen.
