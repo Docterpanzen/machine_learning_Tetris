@@ -1,0 +1,439 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Wie eine KI Tetris lernt – Reinforcement Learning mit A2C und PPO.">
+  <title>Blocklab — Tetris Reinforcement Learning</title>
+  <style>
+    :root {
+      --ink: #172225;
+      --muted: #687679;
+      --paper: #fffdf8;
+      --sand: #f4f1eb;
+      --line: #dcd8cf;
+      --coral: #e85d3f;
+      --coral-dark: #b9412b;
+      --mint: #45a58e;
+      --mint-light: #dceee8;
+      --gold: #d49a31;
+      --navy-2: #25373a;
+      --radius: 28px;
+      --shadow: 0 24px 80px rgba(23, 34, 37, .12);
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; scroll-snap-type: y proximity; }
+    body {
+      margin: 0;
+      color: var(--ink);
+      background: var(--sand);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: clamp(16px, 1.2vw, 20px);
+      line-height: 1.55;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      background:
+        radial-gradient(circle at 87% 6%, rgba(69,165,142,.14), transparent 27rem),
+        radial-gradient(circle at 7% 94%, rgba(232,93,63,.10), transparent 25rem);
+    }
+    button, a { font: inherit; }
+    a { color: inherit; }
+    code { font-family: "SFMono-Regular", Consolas, monospace; }
+
+    .progress {
+      position: fixed;
+      z-index: 30;
+      top: 0;
+      left: 0;
+      height: 5px;
+      width: 0;
+      background: linear-gradient(90deg, var(--coral), #ef9a50, var(--mint));
+      transition: width .1s linear;
+    }
+    .topbar {
+      position: fixed;
+      z-index: 20;
+      top: 18px;
+      left: 50%;
+      width: min(1080px, calc(100% - 32px));
+      transform: translateX(-50%);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 10px 12px 10px 18px;
+      border: 1px solid rgba(220,216,207,.75);
+      border-radius: 999px;
+      background: rgba(255,253,248,.86);
+      box-shadow: 0 10px 35px rgba(23,34,37,.08);
+      backdrop-filter: blur(16px);
+    }
+    .brand { font-size: 13px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+    .brand i { display: inline-block; width: 10px; height: 10px; margin-right: 9px; background: var(--coral); border-radius: 2px; transform: rotate(12deg); }
+    nav { display: flex; gap: 5px; }
+    nav a { width: 31px; height: 31px; display: grid; place-items: center; border-radius: 50%; color: var(--muted); text-decoration: none; font-size: 12px; font-weight: 800; }
+    nav a:hover, nav a.active { color: #fff; background: var(--ink); }
+    .present {
+      border: 0;
+      border-radius: 999px;
+      padding: 8px 15px;
+      color: #fff;
+      background: var(--ink);
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    main { overflow: hidden; }
+    section {
+      position: relative;
+      min-height: 100svh;
+      scroll-snap-align: start;
+      display: grid;
+      align-items: center;
+      padding: 110px max(5vw, 24px) 70px;
+    }
+    .wrap { width: min(1180px, 100%); margin: auto; }
+    .eyebrow { margin: 0 0 16px; color: var(--coral); font-size: 13px; font-weight: 900; letter-spacing: .16em; text-transform: uppercase; }
+    h1, h2, h3, p { margin-top: 0; }
+    h1 { max-width: 800px; margin-bottom: 24px; font-size: clamp(3.8rem, 9vw, 8rem); line-height: .88; letter-spacing: -.075em; }
+    h2 { max-width: 850px; margin-bottom: 16px; font-size: clamp(2.5rem, 5vw, 5rem); line-height: .98; letter-spacing: -.055em; }
+    h3 { font-size: 1.15rem; line-height: 1.25; }
+    .lead { max-width: 760px; color: var(--muted); font-size: clamp(1.1rem, 2vw, 1.45rem); }
+    .dark { color: #fff; background: var(--ink); }
+    .dark .lead, .dark .muted { color: #aec0bd; }
+    .dark::before { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(120deg, transparent 48%, rgba(69,165,142,.12)); }
+
+    .hero-grid { display: grid; grid-template-columns: 1.15fr .85fr; gap: clamp(35px, 7vw, 100px); align-items: center; }
+    .hero h1 span { display: block; color: var(--coral); }
+    .tags { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 35px; }
+    .tag { padding: 9px 15px; border: 1px solid rgba(255,255,255,.15); border-radius: 999px; color: #dce7e5; font-size: 13px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; }
+    .boards { display: flex; align-items: end; justify-content: center; gap: 20px; min-height: 570px; }
+    .board { width: min(47%, 260px); padding: 14px; border: 1px solid rgba(255,255,255,.14); border-radius: 24px; background: var(--navy-2); box-shadow: var(--shadow); transform: rotate(-2deg); }
+    .board:last-child { transform: translateY(45px) rotate(2deg); }
+    .board small { display: flex; justify-content: space-between; padding: 4px 3px 12px; color: #b8c7c5; font-size: 11px; font-weight: 900; letter-spacing: .11em; text-transform: uppercase; }
+    .board:last-child small { color: #aee0d3; }
+    .board img { display: block; width: 100%; border: 3px solid #0d1517; border-radius: 11px; image-rendering: pixelated; }
+
+    .rl-loop { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-top: 54px; }
+    .loop-card { position: relative; min-height: 210px; padding: 28px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+    .loop-card::after { content: "→"; position: absolute; top: 50%; right: -31px; z-index: 3; width: 43px; height: 43px; display: grid; place-items: center; color: #fff; background: var(--coral); border-radius: 50%; transform: translateY(-50%); font-weight: 900; }
+    .loop-card:last-child::after { content: "↺"; background: var(--mint); }
+    .loop-card b { display: block; margin-bottom: 55px; color: var(--coral); font-size: 12px; letter-spacing: .12em; }
+    .loop-card strong { display: block; margin-bottom: 8px; font-size: 1.35rem; }
+    .loop-card span { color: var(--muted); font-size: .9rem; }
+
+    .actor-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; margin-top: 48px; }
+    .actor-card { min-height: 285px; padding: 32px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--paper); }
+    .actor-card:nth-child(2) { color: #fff; background: var(--ink); border-color: var(--ink); transform: translateY(22px); }
+    .actor-card b { display: block; margin-bottom: 50px; color: var(--coral); font-size: 12px; letter-spacing: .13em; text-transform: uppercase; }
+    .actor-card:nth-child(2) b { color: var(--mint); }
+    .actor-card strong { display: block; margin-bottom: 13px; font-size: 1.45rem; }
+    .actor-card p { margin: 0; color: var(--muted); font-size: .9rem; }
+    .actor-card:nth-child(2) p { color: #b7c7c5; }
+    .training-note { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-top: 42px; }
+    .training-note div { padding: 19px 23px; border-radius: 18px; background: var(--mint-light); font-size: .86rem; }
+    .training-note code { color: var(--coral-dark); font-weight: 800; }
+
+    .split { display: grid; grid-template-columns: .8fr 1.2fr; gap: clamp(40px, 7vw, 100px); align-items: center; }
+    .observation { width: min(320px, 100%); margin: auto; padding: 17px; border-radius: 30px; background: var(--ink); box-shadow: var(--shadow); transform: rotate(-2deg); }
+    .observation img { display: block; width: 100%; border-radius: 14px; image-rendering: pixelated; }
+    .spec { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 35px; }
+    .spec article { min-height: 140px; padding: 23px; border-radius: 21px; background: var(--paper); border: 1px solid var(--line); }
+    .spec b { display: block; margin-bottom: 8px; color: var(--coral); font-size: 12px; letter-spacing: .12em; text-transform: uppercase; }
+    .spec strong { font-size: 1.25rem; }
+    .action-row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 25px; }
+    .action { padding: 9px 13px; color: var(--ink); background: var(--mint-light); border-radius: 9px; font-size: 13px; font-weight: 800; }
+
+    .architecture { margin-top: 52px; }
+    .architecture-flow { display: grid; grid-template-columns: repeat(5, 1fr); gap: 13px; }
+    .module { min-height: 185px; padding: 24px 20px; border-radius: 23px; background: var(--navy-2); }
+    .module:first-child { background: var(--coral); }
+    .module:last-child { background: var(--mint); }
+    .module b { display: block; margin-bottom: 48px; color: #bed0cd; font-size: 11px; letter-spacing: .13em; }
+    .module:first-child b, .module:last-child b { color: #fff; opacity: .78; }
+    .module strong { display: block; font-size: 1.12rem; }
+    .module span { display: block; margin-top: 8px; color: #b5c5c3; font-size: .8rem; }
+    .module:first-child span, .module:last-child span { color: #fff; opacity: .8; }
+    .techline { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 25px; }
+    .techline span { padding: 8px 12px; border: 1px solid #3a4d50; border-radius: 999px; color: #bdccca; font-size: 12px; }
+
+    .rewards { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-top: 48px; }
+    .reward { min-height: 255px; padding: 28px; border: 1px solid var(--line); border-radius: 25px; background: var(--paper); }
+    .reward b { color: var(--muted); font-size: 12px; letter-spacing: .11em; }
+    .reward strong { display: block; margin: 22px 0 28px; color: var(--coral); font-size: clamp(2.4rem, 5vw, 4.2rem); line-height: 1; }
+    .reward:nth-child(1) strong { color: var(--mint); }
+    .reward:nth-child(2) strong { color: #65777a; }
+    .reward:nth-child(3) strong { color: var(--gold); }
+    .reward p { color: var(--muted); font-size: .9rem; }
+    .reward-insight { display: grid; grid-template-columns: 1.4fr .6fr; gap: 18px; margin-top: 18px; }
+    .insight { padding: 26px 30px; border-radius: 23px; background: var(--ink); color: #fff; }
+    .insight strong { color: var(--coral); font-size: 1.6rem; }
+    .warning { padding: 26px 30px; border-radius: 23px; background: #f0e2d9; }
+    .warning b { color: var(--coral-dark); }
+
+    .algos { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-top: 48px; }
+    .algo { padding: clamp(28px, 4vw, 55px); border: 1px solid var(--line); border-radius: 32px; background: var(--paper); }
+    .algo:first-child { color: #fff; background: var(--ink); border: 0; }
+    .algo h3 { margin-bottom: 12px; color: var(--mint); font-size: clamp(3rem, 7vw, 6rem); letter-spacing: -.06em; }
+    .algo:first-child h3 { color: var(--coral); }
+    .algo p { color: var(--muted); }
+    .algo:first-child p { color: #b7c7c5; }
+    .algo ul { margin: 28px 0; padding-left: 1.2em; }
+    .algo li { margin: 10px 0; }
+    .run-pill { display: inline-block; padding: 9px 14px; border-radius: 999px; background: var(--mint-light); font-size: 12px; font-weight: 900; text-transform: uppercase; }
+    .algo:first-child .run-pill { color: #fff; background: #304649; }
+    .fair { margin-top: 22px; text-align: center; color: var(--muted); font-size: .85rem; font-weight: 800; }
+
+    .final-grid { display: grid; grid-template-columns: .75fr 1.25fr; gap: clamp(40px, 7vw, 100px); align-items: center; }
+    .compare { display: flex; gap: 14px; align-items: end; }
+    .compare figure { flex: 1; margin: 0; padding: 12px; border-radius: 19px; background: var(--navy-2); }
+    .compare figure:last-child { transform: translateY(35px); }
+    .compare img { width: 100%; display: block; border-radius: 9px; image-rendering: pixelated; }
+    .compare figcaption { padding: 10px 2px 3px; color: #b9c8c6; font-size: 11px; font-weight: 800; text-transform: uppercase; }
+    .takeaways { counter-reset: points; margin-top: 45px; }
+    .takeaway { counter-increment: points; display: grid; grid-template-columns: 54px 1fr; gap: 18px; align-items: start; margin: 25px 0; }
+    .takeaway::before { content: "0" counter(points); width: 48px; height: 48px; display: grid; place-items: center; color: #fff; background: var(--coral); border-radius: 15px; font-size: 13px; font-weight: 900; }
+    .takeaway strong { display: block; margin-bottom: 4px; font-size: 1.12rem; }
+    .takeaway span { color: #afbfbd; font-size: .9rem; }
+    .question { margin-top: 50px; color: var(--mint); font-size: clamp(2rem, 4vw, 4.2rem); font-weight: 900; letter-spacing: -.04em; }
+
+    .hint { position: absolute; right: 28px; bottom: 22px; color: var(--muted); font-size: 11px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
+    .dark .hint { color: #819491; }
+
+    @media (max-width: 850px) {
+      html { scroll-snap-type: none; }
+      .present { display: none; }
+      nav a:nth-child(even) { display: none; }
+      section { min-height: auto; padding-block: 105px 75px; }
+      .hero-grid, .split, .final-grid { grid-template-columns: 1fr; }
+      .boards { min-height: 0; max-width: 520px; margin: 20px auto 35px; }
+      .rl-loop, .rewards { grid-template-columns: 1fr 1fr; }
+      .actor-grid { grid-template-columns: 1fr; }
+      .actor-card:nth-child(2) { transform: none; }
+      .loop-card::after { display: none; }
+      .architecture-flow { grid-template-columns: 1fr 1fr; }
+      .module:last-child { grid-column: 1 / -1; }
+      .reward-insight, .algos { grid-template-columns: 1fr; }
+      .hint { display: none; }
+    }
+    @media (max-width: 540px) {
+      .topbar { top: 10px; }
+      .brand { font-size: 11px; }
+      .rl-loop, .rewards, .spec, .architecture-flow, .training-note { grid-template-columns: 1fr; }
+      .module:last-child { grid-column: auto; }
+      .boards { gap: 8px; }
+      .board { padding: 8px; border-radius: 14px; }
+    }
+    @media print {
+      .topbar, .progress, .hint { display: none; }
+      section { min-height: 100vh; break-after: page; padding: 50px; }
+      * { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+    }
+  </style>
+</head>
+<body>
+  <div class="progress" id="progress"></div>
+  <header class="topbar">
+    <div class="brand"><i></i>Blocklab</div>
+    <nav aria-label="Abschnitte">
+      <a href="#start" aria-label="Start">01</a><a href="#lernen" aria-label="Lernprinzip">02</a><a href="#actor-critic" aria-label="Actor-Critic">03</a><a href="#umgebung" aria-label="Umgebung">04</a><a href="#system" aria-label="System">05</a><a href="#reward" aria-label="Reward">06</a><a href="#algorithmen" aria-label="Algorithmen">07</a><a href="#fazit" aria-label="Fazit">08</a>
+    </nav>
+    <button class="present" id="present" type="button">Vollbild</button>
+  </header>
+
+  <main>
+    <section class="hero dark" id="start">
+      <div class="wrap hero-grid">
+        <div>
+          <p class="eyebrow">Tetris · Reinforcement Learning</p>
+          <h1>Wie eine KI <span>Tetris lernt.</span></h1>
+          <p class="lead">Eine vollständige lokale RL-Anwendung mit visueller Policy, selbst definiertem Reward und echten Trainingsläufen.</p>
+          <div class="tags"><span class="tag">A2C + PPO</span><span class="tag">Pixel → Aktion → Reward</span><span class="tag">Gymnasium</span></div>
+        </div>
+        <div class="boards" aria-label="Tetris vor und nach dem Training">
+          <div class="board"><small><span>Vorher · 10k</span><span>00</span></small><img src="gifs/test_last.gif" alt="Schwach trainiertes Tetris-Modell aus dem Test-Lauf"></div>
+          <div class="board"><small><span>Nachher · 1,2 Mio.</span><span>01</span></small><img src="gifs/Run_1_last.gif" alt="Gut trainiertes Tetris-Modell aus dem Run_1-Lauf"></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="lernen">
+      <div class="wrap">
+        <p class="eyebrow">01 · Das Lernprinzip</p>
+        <h2>Lernen durch Rückmeldung.</h2>
+        <p class="lead">Der Agent bekommt keine Regel wie „baue flach“. Er probiert Aktionen aus und lernt, welche Entscheidungen langfristig viel Reward bringen.</p>
+        <div class="rl-loop">
+          <article class="loop-card"><b>01</b><strong>Beobachten</strong><span>Ein RGB-Bild zeigt das aktuelle Spielfeld.</span></article>
+          <article class="loop-card"><b>02</b><strong>Entscheiden</strong><span>Die Policy wählt eine von fünf Aktionen.</span></article>
+          <article class="loop-card"><b>03</b><strong>Bewerten</strong><span>Tetris liefert neuen Zustand und Reward.</span></article>
+          <article class="loop-card"><b>04</b><strong>Optimieren</strong><span>Gute Aktionen werden wahrscheinlicher.</span></article>
+        </div>
+      </div>
+      <span class="hint">Policy + Value Function + Advantage</span>
+    </section>
+
+    <section id="actor-critic">
+      <div class="wrap">
+        <p class="eyebrow">02 · Actor-Critic</p>
+        <h2>Drei Ideen hinter jeder Entscheidung.</h2>
+        <p class="lead">A2C und PPO kombinieren eine handelnde Policy mit einer bewertenden Value Function. Der Advantage verbindet beide beim Lernen.</p>
+        <div class="actor-grid">
+          <article class="actor-card"><b>Handeln</b><strong>Policy</strong><p>„Welche Aktion sollte ich wählen?“ Sie erzeugt Wahrscheinlichkeiten für links, rechts, drehen und Drop.</p></article>
+          <article class="actor-card"><b>Erwarten</b><strong>Value Function</strong><p>„Wie viel zukünftiger Reward ist von diesem Zustand aus noch zu erwarten?“</p></article>
+          <article class="actor-card"><b>Vergleichen</b><strong>Advantage</strong><p>War das Ergebnis besser als erwartet? Dann wird die gewählte Aktion wahrscheinlicher – sonst unwahrscheinlicher.</p></article>
+        </div>
+        <div class="training-note">
+          <div><strong>Training:</strong> Aktionen werden gesampelt – das Modell exploriert. Im Playground wählt <code>deterministic=True</code> reproduzierbar die bevorzugte Aktion.</div>
+          <div><strong>Timestep:</strong> genau eine Environment-Interaktion, nicht ein ganzes Spiel. Bei parallelen Environments verteilen sich die Schritte auf mehrere Partien.</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="umgebung">
+      <div class="wrap split">
+        <div class="observation"><img src="gifs/RUN_PPO_last.gif" alt="RGB-Beobachtung des Tetris-Agenten"></div>
+        <div>
+          <p class="eyebrow">03 · Die Umgebung</p>
+          <h2>Das Modell sieht nur Pixel.</h2>
+          <p class="lead">Gymnasium übersetzt das Java-Spiel in eine standardisierte Lernaufgabe. Ein CNN erkennt räumliche Muster direkt im Spielfeldbild.</p>
+          <div class="spec">
+            <article><b>Observation</b><strong>200 × 100 × 3</strong><br><span class="muted">RGB · uint8</span></article>
+            <article><b>Action Space</b><strong>Discrete(5)</strong><br><span class="muted">genau fünf Aktionen</span></article>
+            <article><b>Episode</b><strong>Game Over → Reset</strong><br><span class="muted">ein vollständiges Spiel</span></article>
+            <article><b>Adapter</b><strong>TetrisEnv</strong><br><span class="muted">Gymnasium ↔ Java-Tetris</span></article>
+          </div>
+          <div class="action-row" aria-label="Verfügbare Aktionen"><span class="action">← links</span><span class="action">rechts →</span><span class="action">↶ drehen</span><span class="action">↷ drehen</span><span class="action">↓ drop</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="dark" id="system">
+      <div class="wrap">
+        <p class="eyebrow">04 · Die Umsetzung</p>
+        <h2>Fünf Schichten. Eine Lernschleife.</h2>
+        <p class="lead">Jedes Modul hat genau eine Aufgabe – von der Bedienoberfläche bis zur eigentlichen Spiel-Engine.</p>
+        <div class="architecture">
+          <div class="architecture-flow">
+            <article class="module"><b>WEB-APP</b><strong>Streamlit</strong><span>Konfiguration & Auswertung</span></article>
+            <article class="module"><b>BACKEND</b><strong>FastAPI</strong><span>REST, WebSocket & Prozesse</span></article>
+            <article class="module"><b>TRAINING</b><strong>A2C / PPO</strong><span>Stable Baselines3</span></article>
+            <article class="module"><b>ENVIRONMENT</b><strong>Gymnasium</strong><span>Observation, Action & Reward</span></article>
+            <article class="module"><b>SPIEL</b><strong>Java Tetris</strong><span>TCP-Server & PNG-Frames</span></article>
+          </div>
+          <div class="techline"><span>PyTorch + CNN</span><span>OpenCV + NumPy</span><span>SQLite + JSON</span><span>TensorBoard</span><span>ImageIO</span></div>
+        </div>
+      </div>
+    </section>
+
+    <section id="reward">
+      <div class="wrap">
+        <p class="eyebrow">05 · Reward Design</p>
+        <h2>Was bedeutet „gutes Tetris“?</h2>
+        <p class="lead">Der Reward ist die eigentliche Aufgabenbeschreibung. Die KI optimiert diese Zahlen – nicht die menschliche Absicht dahinter.</p>
+        <div class="rewards">
+          <article class="reward"><b>DROP</b><strong>+5</strong><p>Aktives Platzieren fördern.</p></article>
+          <article class="reward"><b>HÖHE +1</b><strong>−5</strong><p>Riskanten Turmbau bremsen.</p></article>
+          <article class="reward"><b>LOCH −1</b><strong>+10</strong><p>Kompakte Strukturen fördern.</p></article>
+          <article class="reward"><b>ZEILE</b><strong>+1000</strong><p>Das Hauptziel klar priorisieren.</p></article>
+        </div>
+        <div class="reward-insight">
+          <div class="insight"><strong>1 gelöschte Zeile = 200 Drops</strong><br><span class="muted">Die Zeilenkomponente dominiert das Lernsignal bewusst sehr stark.</span></div>
+          <div class="warning"><b>Grenze:</b><br>keine eigene Game-Over Logik</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="algorithmen">
+      <div class="wrap">
+        <p class="eyebrow">06 · Die Algorithmen</p>
+        <h2>A2C oder PPO?</h2>
+        <p class="lead">Beide sind Actor-Critic-Verfahren. Sie lernen aus demselben Reward, unterscheiden sich aber darin, wie vorsichtig sie ihre Policy aktualisieren.</p>
+        <div class="algos">
+          <article class="algo">
+            <h3>A2C</h3><p><strong>Advantage Actor-Critic</strong></p>
+            <ul><li><strong>Lernstil:</strong> lernt direkt und schnell</li><li><strong>Daten:</strong> verwendet Erfahrungen einmal</li><li><strong>Stabilität:</strong> kann stärker schwanken</li><li><strong>Aufwand:</strong> weniger Rechenzeit</li></ul>
+            <span class="run-pill">Run_1 · 1,2 Mio. Timesteps · 20 Envs</span>
+          </article>
+          <article class="algo">
+            <h3>PPO</h3><p><strong>Proximal Policy Optimization</strong></p>
+            <ul><li><strong>Lernstil:</strong> lernt vorsichtiger</li><li><strong>Daten:</strong> verwendet Erfahrungen mehrfach</li><li><strong>Stabilität:</strong> meist kontrollierter</li><li><strong>Aufwand:</strong> mehr Rechenzeit</li></ul>
+            <span class="run-pill">RUN_PPO · 600.000 Timesteps · 20 Envs</span>
+          </article>
+        </div>
+        <p class="fair">Ein fairer Vergleich braucht gleiche Timesteps, Reward-Version, Startbedingungen und Seeds.</p>
+      </div>
+    </section>
+
+    <section class="dark" id="fazit">
+      <div class="wrap final-grid">
+        <div class="compare" aria-label="A2C vor und nach dem Training">
+          <figure><img src="gifs/test_last.gif" alt="Schwaches Test-Modell"><figcaption>Test · 10.000 Timesteps</figcaption></figure>
+          <figure><img src="gifs/Run_1_last.gif" alt="Gutes Run_1-Modell"><figcaption>Run_1 · 1,2 Mio. Timesteps</figcaption></figure>
+        </div>
+        <div>
+          <p class="eyebrow">07 · Fazit</p>
+          <h2>Vom Pixel zum trainierten Modell.</h2>
+          <div class="takeaways">
+            <div class="takeaway"><div><strong>Die Environment baut die Brücke.</strong><span>Sie verbindet Java-Tetris mit dem Lernalgorithmus.</span></div></div>
+            <div class="takeaway"><div><strong>A2C und PPO lernen aus Erfahrung.</strong><span>Beide optimieren Policy und Value Function aus demselben Signal.</span></div></div>
+            <div class="takeaway"><div><strong>Der Reward definiert das Ziel.</strong><span>Sein Design ist der wichtigste fachliche Hebel des Projekts.</span></div></div>
+          </div>
+          <div class="question">Fragen?</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const sections = [...document.querySelectorAll("main section")];
+    const links = [...document.querySelectorAll("nav a")];
+    const progress = document.getElementById("progress");
+
+    function updateView() {
+      const max = document.documentElement.scrollHeight - innerHeight;
+      progress.style.width = `${max > 0 ? (scrollY / max) * 100 : 0}%`;
+      let current = 0;
+      sections.forEach((section, index) => {
+        if (section.getBoundingClientRect().top <= innerHeight * .45) current = index;
+      });
+      links.forEach((link, index) => link.classList.toggle("active", index === current));
+    }
+
+    function activeIndex() {
+      let nearest = 0;
+      let distance = Infinity;
+      sections.forEach((section, index) => {
+        const d = Math.abs(section.getBoundingClientRect().top);
+        if (d < distance) { nearest = index; distance = d; }
+      });
+      return nearest;
+    }
+
+    addEventListener("scroll", updateView, { passive: true });
+    addEventListener("resize", updateView);
+    addEventListener("keydown", event => {
+      if (!["ArrowDown", "ArrowRight", "PageDown", "ArrowUp", "ArrowLeft", "PageUp", "Home", "End"].includes(event.key)) return;
+      event.preventDefault();
+      let target = activeIndex();
+      if (["ArrowDown", "ArrowRight", "PageDown"].includes(event.key)) target++;
+      if (["ArrowUp", "ArrowLeft", "PageUp"].includes(event.key)) target--;
+      if (event.key === "Home") target = 0;
+      if (event.key === "End") target = sections.length - 1;
+      sections[Math.max(0, Math.min(sections.length - 1, target))].scrollIntoView({ behavior: "smooth" });
+    });
+    document.getElementById("present").addEventListener("click", async () => {
+      try {
+        if (!document.fullscreenElement) await document.documentElement.requestFullscreen();
+        else await document.exitFullscreen();
+      } catch (_) { /* Fullscreen kann vom Browser blockiert werden. */ }
+    });
+    updateView();
+  </script>
+</body>
+</html>

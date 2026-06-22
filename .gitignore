@@ -8,3 +8,7 @@ __pycache__/
 /replay/
 /sb3_log/
 
+build_presentation.py
+
+play_*
+tetris_server.*
